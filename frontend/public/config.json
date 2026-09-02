@@ -1,0 +1,9 @@
+{
+  "apiBaseUrl": "/api",
+  "useMockData": true,
+  "keycloak": {
+    "url": "",
+    "realm": "muamalat",
+    "clientId": "muamalat-web"
+  }
+}
