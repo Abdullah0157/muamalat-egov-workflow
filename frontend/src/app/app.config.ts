@@ -12,6 +12,7 @@ import {
 
 import { routes } from './app.routes';
 import { provideData } from './core/data/data.providers';
+import { provideAuth } from './core/auth/auth.providers';
 import { provideI18n } from './core/i18n/i18n.providers';
 
 export const appConfig: ApplicationConfig = {
@@ -31,6 +32,7 @@ export const appConfig: ApplicationConfig = {
     // without a backend. A real deployment sets this to false and talks to the
     // API. Kept as an explicit flag rather than an environment file so the
     // choice is visible at the composition root.
+    provideAuth(),
     provideData({ useMockData: true }),
   ],
 };

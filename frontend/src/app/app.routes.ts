@@ -12,6 +12,12 @@ import { redirectIfSignedIn, requireRole, routeToRoleHome } from './core/auth/ro
  */
 export const routes: Routes = [
   {
+    // Outside the shell: the user is not signed in yet, so there is no
+    // navigation to render, and the redirect back from Keycloak lands here.
+    path: 'auth/callback',
+    loadComponent: () => import('./features/auth/callback').then((m) => m.AuthCallback),
+  },
+  {
     path: 'sign-in',
     canActivate: [redirectIfSignedIn],
     loadComponent: () => import('./features/auth/sign-in-page').then((m) => m.SignInPage),

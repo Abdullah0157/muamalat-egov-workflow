@@ -7,7 +7,6 @@
     "footerNote": "Muamalat is an internal service request and workflow platform.",
     "prototypeNotice": "Prototype build. All records shown are sample data and no submission is filed with any authority."
   },
-
   "common": {
     "save": "Save",
     "saveDraft": "Save draft",
@@ -93,7 +92,6 @@
     "characterCountRemaining": "{remaining} characters left",
     "listSeparator": ", "
   },
-
   "units": {
     "day": "{value} d",
     "hour": "{value} h",
@@ -129,7 +127,6 @@
       "other": "{count} selected"
     }
   },
-
   "nav": {
     "primary": "Primary navigation",
     "utility": "Account and settings",
@@ -147,14 +144,12 @@
     "sectionSupervisor": "Oversight",
     "sectionAdmin": "Administration"
   },
-
   "lang": {
     "switch": "Language",
     "switchTo": "Switch to {language}",
     "current": "Current language: {language}",
     "loadFailed": "The Arabic text could not be downloaded, so the interface is showing English. Check your connection and try switching again."
   },
-
   "theme": {
     "label": "Appearance",
     "system": "Match system",
@@ -162,7 +157,6 @@
     "dark": "Dark",
     "toggle": "Change appearance"
   },
-
   "auth": {
     "signInTitle": "Sign in to Muamalat",
     "signInIntro": "Choose the account you want to use. This prototype does not connect to the national identity service, so no credentials are collected.",
@@ -173,9 +167,16 @@
     "account": "Account",
     "civilId": "Civil ID",
     "jobTitle": "Job title",
-    "email": "Email"
+    "email": "Email",
+    "callback": {
+      "signingIn": "Signing you in...",
+      "failedTitle": "Sign in could not be completed",
+      "retry": "Try signing in again",
+      "noClaims": "The sign in completed but returned no account details. Try again, and contact support if it keeps happening."
+    },
+    "signInWithProvider": "Sign in",
+    "redirecting": "Redirecting..."
   },
-
   "roles": {
     "citizen": "Citizen",
     "officer": "Officer",
@@ -186,7 +187,6 @@
     "supervisorDescription": "Monitor departmental workload, SLA performance and escalations.",
     "adminDescription": "Design and version the workflows the whole platform runs on."
   },
-
   "status": {
     "label": "Status",
     "draft": "Draft",
@@ -198,14 +198,12 @@
     "completed": "Completed",
     "cancelled": "Cancelled"
   },
-
   "priority": {
     "label": "Priority",
     "normal": "Normal",
     "high": "High",
     "urgent": "Urgent"
   },
-
   "sla": {
     "label": "Service level",
     "onTrack": "On track",
@@ -220,7 +218,6 @@
     "atRiskExplanation": "Less than a quarter of the processing window remains.",
     "breachedExplanation": "The statutory processing window has passed."
   },
-
   "stage": {
     "submission": "Submission",
     "review": "Review",
@@ -231,21 +228,18 @@
     "approvalHint": "A supervisor confirms or refuses the decision.",
     "completionHint": "The outcome is issued and the file is closed."
   },
-
   "stateKind": {
     "start": "Start",
     "task": "Task",
     "decision": "Decision",
     "end": "End"
   },
-
   "transitionKind": {
     "forward": "Advance",
     "reject": "Reject",
     "moreInfo": "Request information",
     "escalate": "Escalate"
   },
-
   "historyAction": {
     "created": "Request created",
     "submitted": "Request submitted",
@@ -257,7 +251,6 @@
     "escalated": "Escalated",
     "reminderSent": "Reminder sent"
   },
-
   "validation": {
     "summaryTitle": "This form cannot be submitted yet",
     "summaryIntro": "Correct the following before continuing.",
@@ -280,7 +273,6 @@
     "acknowledgeRequired": "Confirm the declaration before submitting.",
     "commentRequired": "This action requires a comment explaining the decision."
   },
-
   "errors": {
     "genericTitle": "This section could not be loaded",
     "genericDescription": "The request to the workflow service did not complete. Nothing has been changed. Try again, and if it keeps failing, quote reference {reference} to the service desk.",
@@ -309,7 +301,6 @@
     "switchAccount": "Switch account",
     "supportReference": "Support reference"
   },
-
   "empty": {
     "noRequestsTitle": "You have not submitted any requests",
     "noRequestsDescription": "When you submit a request it appears here with its reference number and current stage.",
@@ -331,7 +322,6 @@
     "noDataTitle": "No data for this period",
     "noDataDescription": "There is nothing recorded in the selected period, so no figures can be shown."
   },
-
   "toast": {
     "regionLabel": "Notifications",
     "dismiss": "Dismiss notification",
@@ -351,7 +341,6 @@
     "changesDiscarded": "Changes discarded",
     "copied": "Copied to the clipboard"
   },
-
   "a11y": {
     "skipToContent": "Skip to main content",
     "mainContent": "Main content",
@@ -375,7 +364,6 @@
     "opensInNewTab": "opens in a new tab",
     "chartDescription": "Chart. The same figures are listed in the table below."
   },
-
   "table": {
     "caption": "{count} records",
     "rowsPerPage": "Rows per page",
@@ -393,7 +381,6 @@
     "noResults": "No rows to show",
     "loadingRows": "Loading rows"
   },
-
   "dialog": {
     "confirmTitle": "Confirm",
     "discardTitle": "Discard your changes?",
@@ -403,13 +390,11 @@
     "leaveTitle": "Leave this request?",
     "leaveDescription": "Your draft is saved, so you can return to it from your request list."
   },
-
   "search": {
     "placeholder": "Search by reference, service or applicant",
     "label": "Search requests",
     "clear": "Clear search"
   },
-
   "citizen": {
     "title": "My requests",
     "subtitle": "Everything you have filed with the ministry, and where each file has reached.",
@@ -465,7 +450,6 @@
       "startAnother": "File another request"
     }
   },
-
   "officer": {
     "title": "Work queue",
     "subtitle": "Cases assigned to you and to your department, ordered by how close each one is to its deadline.",
@@ -509,7 +493,6 @@
     "documentsVerifiedCount": "{verified} of {required} required documents verified",
     "waitingOn": "Waiting on {role}"
   },
-
   "supervisor": {
     "title": "Oversight dashboard",
     "subtitle": "Departmental workload, service level performance and where cases are getting stuck.",
@@ -553,7 +536,6 @@
     "noBreaches": "No breached cases in this period.",
     "figuresNote": "All figures are calculated from the records in the selected period."
   },
-
   "admin": {
     "title": "Workflow definitions",
     "subtitle": "The state machines that every service request runs on. Published versions are immutable; changes are made in a draft.",
@@ -626,7 +608,6 @@
     "saveDraft": "Save draft",
     "runningCases": "{count} running cases"
   },
-
   "documents": {
     "verification": {
       "pending": "Not checked",
@@ -639,7 +620,6 @@
     "size": "Size",
     "requirement": "Requirement"
   },
-
   "demo": {
     "title": "Prototype controls",
     "description": "This build runs on sample data held in the browser. These switches exist so the loading, empty and error states can be reviewed without a back end.",

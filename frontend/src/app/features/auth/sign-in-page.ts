@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { OidcService } from '../../core/auth/oidc.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { LANGUAGE_CONFIG, SUPPORTED_LANGUAGES, Language } from '../../core/i18n/i18n.types';
 import { User } from '../../core/models/domain';
@@ -53,6 +54,20 @@ import { Icon } from '../../shared/ui/icon/icon';
         <h1 class="sign-in__title">{{ i18n.t('auth.signInTitle') }}</h1>
         <p class="sign-in__intro">{{ i18n.t('auth.signInIntro') }}</p>
 
+        <!--
+          The real way in. The demo accounts below exist so the interface can be
+          explored without an identity provider, and are labelled as such rather
+          than presented as equivalent options.
+        -->
+        <button
+          type="button"
+          class="sign-in__provider"
+          [disabled]="redirecting()"
+          (click)="signInWithProvider()"
+        >
+          {{ redirecting() ? i18n.t('auth.redirecting') : i18n.t('auth.signInWithProvider') }}
+        </button>
+
         <h2 class="sign-in__legend">{{ i18n.t('auth.chooseRole') }}</h2>
         <p class="sign-in__hint">{{ i18n.t('auth.roleHint') }}</p>
 
@@ -100,10 +115,23 @@ export class SignInPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly oidc = inject(OidcService);
 
   protected readonly accounts = this.auth.accounts;
   protected readonly languages = SUPPORTED_LANGUAGES;
   protected readonly busyId = signal<string | null>(null);
+  protected readonly redirecting = signal(false);
+
+  /**
+   * Hands the browser to Keycloak. The deep link the visitor originally asked
+   * for is carried through the redirect so authentication does not cost them
+   * their place.
+   */
+  protected signInWithProvider(): void {
+    this.redirecting.set(true);
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+    void this.oidc.signIn(returnTo ?? undefined);
+  }
 
   protected languageName(language: Language): string {
     return LANGUAGE_CONFIG[language].nativeName;

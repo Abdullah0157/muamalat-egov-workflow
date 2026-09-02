@@ -203,3 +203,32 @@
     gap: var(--space-3);
   }
 }
+
+/* The primary route in. Given weight above the demo accounts so the real
+   sign in reads as the intended action rather than one option among five. */
+.sign-in__provider {
+  font: inherit;
+  font-weight: 600;
+  inline-size: 100%;
+  cursor: pointer;
+  padding: var(--space-3) var(--space-4);
+  margin-block-end: var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.sign-in__provider:hover:not(:disabled) {
+  background: var(--color-primary-strong, var(--color-primary));
+}
+
+.sign-in__provider:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.sign-in__provider:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
