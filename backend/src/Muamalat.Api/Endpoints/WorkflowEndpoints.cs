@@ -34,6 +34,18 @@ public static class WorkflowEndpoints
         group.MapGet("/{key}/published", GetPublishedAsync)
             .WithSummary("Get the currently published version of a workflow");
 
+        group.MapPost("/{key}/versions/{version:int}/draft", CreateDraftAsync)
+            .WithSummary("Create an editable draft from an existing version")
+            .WithDescription(
+                "Copies a version into a new, unpublished one. Published definitions are never " +
+                "edited in place, because requests already in flight execute against the version " +
+                "they were pinned to and changing it under them would rewrite the rules mid case.")
+            .RequireAuthorization(Policies.Admin);
+
+        group.MapPut("/{key}/versions/{version:int}", ReplaceDraftAsync)
+            .WithSummary("Replace the states and transitions of an unpublished draft")
+            .RequireAuthorization(Policies.Admin);
+
         group.MapPost("/{key}/versions/{version:int}/validate", ValidateAsync)
             .WithSummary("Validate a workflow definition without publishing it")
             .RequireAuthorization(Policies.Admin);
@@ -95,6 +107,155 @@ public static class WorkflowEndpoints
         return definition is null
             ? TypedResults.NotFound(Problems.NoPublishedVersion(key))
             : TypedResults.Ok(WorkflowDetailDto.From(definition));
+    }
+
+    private static async Task<Results<Created<WorkflowDetailDto>, NotFound<ProblemDetails>>> CreateDraftAsync(
+        string key,
+        int version,
+        MuamalatDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var source = await LoadAsync(db, d => d.Key == key && d.Version == version, cancellationToken);
+        if (source is null) return TypedResults.NotFound(Problems.WorkflowNotFound(key, version));
+
+        var nextVersion = await db.WorkflowDefinitions
+            .Where(d => d.Key == key)
+            .MaxAsync(d => (int?)d.Version, cancellationToken) ?? 0;
+
+        var draft = CopyDefinition(source, nextVersion + 1);
+
+        db.WorkflowDefinitions.Add(draft);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Created(
+            $"/api/workflows/{key}/versions/{draft.Version}",
+            WorkflowDetailDto.From(draft));
+    }
+
+    private static async Task<Results<Ok<WorkflowDetailDto>, NotFound<ProblemDetails>, Conflict<ProblemDetails>, ValidationProblem>>
+        ReplaceDraftAsync(
+            string key,
+            int version,
+            WorkflowDraftDto body,
+            MuamalatDbContext db,
+            CancellationToken cancellationToken)
+    {
+        var existing = await LoadAsync(db, d => d.Key == key && d.Version == version, cancellationToken);
+        if (existing is null) return TypedResults.NotFound(Problems.WorkflowNotFound(key, version));
+
+        // A published version is immutable. In-flight requests execute against the version they
+        // were pinned to, so editing it would silently change the rules under cases that are
+        // already halfway through.
+        if (existing.IsPublished)
+        {
+            return TypedResults.Conflict(new ProblemDetails
+            {
+                Title = "Published workflows cannot be edited",
+                Detail =
+                    $"Version {version} of '{key}' is published and is being executed by live requests. " +
+                    "Create a draft from it, edit that, and publish when it is ready.",
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+
+        var rebuilt = new WorkflowDefinition(key, version, body.NameEn, body.NameAr);
+        ApplyDraft(rebuilt, body);
+
+        var errors = rebuilt.Validate();
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(
+                new Dictionary<string, string[]> { ["definition"] = [.. errors] },
+                detail: "The edited workflow is structurally invalid.");
+        }
+
+        // Replaced wholesale rather than diffed. The designer sends the whole definition, and
+        // reconciling state by state would be a large amount of code whose only purpose is to
+        // arrive at the same result.
+        db.WorkflowDefinitions.Remove(existing);
+        await db.SaveChangesAsync(cancellationToken);
+
+        db.WorkflowDefinitions.Add(rebuilt);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(WorkflowDetailDto.From(rebuilt));
+    }
+
+    private static WorkflowDefinition CopyDefinition(WorkflowDefinition source, int version)
+    {
+        var copy = new WorkflowDefinition(source.Key, version, source.NameEn, source.NameAr);
+
+        foreach (var state in source.States.OrderBy(s => s.SortOrder))
+        {
+            var added = copy.AddState(state.Code, state.NameEn, state.NameAr, state.Kind).At(state.SortOrder);
+
+            if (state.OwningDepartment is not null) added.OwnedBy(state.OwningDepartment);
+            if (state.Sla is not null) added.WithSla(state.Sla.Target, state.Sla.WarnAfter, state.Sla.EscalateToRole);
+        }
+
+        foreach (var transition in source.Transitions)
+        {
+            var added = copy
+                .AddTransition(transition.Code, transition.FromStateCode, transition.ToStateCode,
+                    transition.NameEn, transition.NameAr)
+                .ForRoles([.. transition.AllowedRoles])
+                .AsKind(transition.Kind);
+
+            if (transition.RequiresComment) added.RequiringComment();
+
+            // New instances, not the source's. Guards and actions are owned entities: EF
+            // tracks each one as belonging to the transition it was loaded with, and handing
+            // the same instance to a second transition tries to move it rather than copy it.
+            foreach (var guard in transition.Guards)
+            {
+                added.WithGuard(new TransitionGuard(guard.Kind, guard.Parameter));
+            }
+
+            foreach (var action in transition.Actions)
+            {
+                added.WithAction(new TransitionAction(action.Kind, action.Parameter));
+            }
+        }
+
+        return copy;
+    }
+
+    private static void ApplyDraft(WorkflowDefinition target, WorkflowDraftDto body)
+    {
+        foreach (var state in body.States.OrderBy(s => s.SortOrder))
+        {
+            var added = target
+                .AddState(state.Code, state.NameEn, state.NameAr, Enum.Parse<StateKind>(state.Kind, ignoreCase: true))
+                .At(state.SortOrder);
+
+            if (!string.IsNullOrWhiteSpace(state.OwningDepartment)) added.OwnedBy(state.OwningDepartment);
+
+            if (state.Sla is not null)
+            {
+                added.WithSla(state.Sla.Target, state.Sla.WarnAfter, state.Sla.EscalateToRole);
+            }
+        }
+
+        foreach (var transition in body.Transitions)
+        {
+            var added = target
+                .AddTransition(transition.Code, transition.FromStateCode, transition.ToStateCode,
+                    transition.NameEn, transition.NameAr)
+                .ForRoles([.. transition.AllowedRoles])
+                .AsKind(Enum.Parse<TransitionKind>(transition.Kind, ignoreCase: true));
+
+            if (transition.RequiresComment) added.RequiringComment();
+
+            foreach (var guard in transition.Guards)
+            {
+                added.WithGuard(new TransitionGuard(Enum.Parse<GuardKind>(guard.Kind, ignoreCase: true), guard.Parameter));
+            }
+
+            foreach (var action in transition.Actions)
+            {
+                added.WithAction(new TransitionAction(Enum.Parse<ActionKind>(action.Kind, ignoreCase: true), action.Parameter));
+            }
+        }
     }
 
     private static async Task<Results<Ok<ValidationReportDto>, NotFound<ProblemDetails>>> ValidateAsync(
@@ -183,6 +344,13 @@ internal static class Problems
     {
         Title = "Workflow definition not found",
         Detail = $"No version {version} exists for workflow '{key}'.",
+        Status = StatusCodes.Status404NotFound
+    };
+
+    public static ProblemDetails DocumentNotFound(Guid documentId) => new()
+    {
+        Title = "Document not found",
+        Detail = $"No document with id '{documentId}' is attached to this request.",
         Status = StatusCodes.Status404NotFound
     };
 
@@ -292,3 +460,9 @@ public sealed record GuardDto(string Kind, string? Parameter);
 public sealed record ActionDto(string Kind, string? Parameter);
 
 public sealed record ValidationReportDto(bool IsValid, IReadOnlyList<string> Errors);
+
+public sealed record WorkflowDraftDto(
+    string NameEn,
+    string NameAr,
+    IReadOnlyList<WorkflowStateDto> States,
+    IReadOnlyList<WorkflowTransitionDto> Transitions);

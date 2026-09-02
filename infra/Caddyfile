@@ -1,0 +1,55 @@
+# Public entry point.
+#
+# One hostname serves the whole system: the interface at the root, the API under /api, and
+# Keycloak under /auth. Keeping them on a single origin means the browser makes no cross
+# origin requests at all, so there is no CORS to configure and no third party cookie problem
+# on the identity provider.
+#
+# Caddy obtains and renews the certificate itself. Certificate renewal is the part of a
+# deployment that quietly stops working months later, and removing that step removes the
+# failure.
+
+{$PUBLIC_HOSTNAME} {
+	encode zstd gzip
+
+	# Keycloak. The trailing path is preserved, and the forwarded headers are what let
+	# Keycloak construct correct absolute URLs behind TLS termination.
+	handle_path /auth/* {
+		reverse_proxy keycloak:8080 {
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Host {host}
+		}
+	}
+
+	# API. The /api prefix is preserved rather than stripped, because that is the path the
+	# endpoints are actually registered on.
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle /health/* {
+		reverse_proxy api:8080
+	}
+
+	# Everything else is the single page application.
+	handle {
+		reverse_proxy web:8080
+	}
+
+	header {
+		# HSTS. Only meaningful once the certificate is working, which it is by the time
+		# this responds at all.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+
+		# Caddy adds its own; removing it avoids advertising the server software.
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

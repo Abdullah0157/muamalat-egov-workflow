@@ -1,0 +1,92 @@
+# Production overrides.
+#
+# Applied on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# What changes from the development stack, and why:
+#
+#   - Keycloak runs in production mode behind TLS instead of dev mode. Dev mode disables
+#     HTTPS enforcement and hostname checks, which is fine on a laptop and unacceptable on
+#     a public address.
+#   - The API stops applying migrations and seeding on boot. Schema changes become a
+#     deliberate, auditable step rather than something an instance does to itself while
+#     starting, which matters when more than one instance starts at once.
+#   - No demonstration caseload. A public deployment shows real data or nothing.
+#   - Nothing is published to the host except the reverse proxy. Postgres and Keycloak are
+#     reachable only on the internal network, so a misconfigured firewall cannot expose the
+#     database.
+#   - Every secret comes from the environment with no default. A missing value stops the
+#     deployment instead of silently falling back to a development password.
+
+services:
+  postgres:
+    ports: []
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - muamalat-postgres-data:/var/lib/postgresql/data
+
+  keycloak:
+    restart: always
+    command: start --optimized --import-realm
+    ports: []
+    environment:
+      KC_HOSTNAME: ${PUBLIC_HOSTNAME:?PUBLIC_HOSTNAME must be set}
+      KC_HOSTNAME_STRICT: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:?KEYCLOAK_ADMIN must be set}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD must be set}
+
+  api:
+    restart: always
+    ports: []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Development applies migrations on boot as a convenience. In production the schema is
+      # migrated deliberately, before the new image is rolled out.
+      Demo__SeedCaseload: "false"
+
+      ConnectionStrings__Muamalat: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-muamalat};Username=${POSTGRES_USER:-muamalat};Password=${POSTGRES_PASSWORD}
+
+      Authentication__Authority: https://${PUBLIC_HOSTNAME}/auth/realms/muamalat
+      Authentication__Audience: muamalat-api
+      Authentication__AllowHttpMetadata: "false"
+
+      Cors__AllowedOrigins__0: https://${PUBLIC_HOSTNAME}
+
+  web:
+    restart: always
+    ports: []
+    environment:
+      WEB_KEYCLOAK_ORIGIN: https://${PUBLIC_HOSTNAME}/auth
+      WEB_API_BASE_URL: /api
+
+  # Terminates TLS and obtains a certificate automatically. Caddy is used rather than nginx
+  # plus certbot because certificate renewal is the part that silently breaks six months
+  # later, and having it built in removes that failure mode entirely.
+  proxy:
+    image: caddy:2-alpine
+    restart: always
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

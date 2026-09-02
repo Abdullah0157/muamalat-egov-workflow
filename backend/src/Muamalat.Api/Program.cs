@@ -187,6 +187,7 @@ app.UseAuthorization();
 app.MapWorkflowEndpoints();
 app.MapRequestEndpoints();
 app.MapDashboardEndpoints();
+app.MapDocumentEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {
