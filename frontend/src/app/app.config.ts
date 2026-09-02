@@ -27,6 +27,10 @@ export const appConfig: ApplicationConfig = {
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),
     provideI18n(),
-    provideData(),
+    // The demo build runs on the in-memory dataset so the UI can be explored
+    // without a backend. A real deployment sets this to false and talks to the
+    // API. Kept as an explicit flag rather than an environment file so the
+    // choice is visible at the composition root.
+    provideData({ useMockData: true }),
   ],
 };

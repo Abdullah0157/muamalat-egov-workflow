@@ -1,15 +1,39 @@
 import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
 import { DataGateway } from './data-gateway';
+import { HttpDataGateway } from './http-data.gateway';
 import { MockDataGateway } from './mock-data.gateway';
+import { authInterceptor } from '../auth/auth.interceptor';
 
 /**
- * The one file to change when the real API arrives.
+ * How the application gets its data.
  *
- * Point `DataGateway` at an `HttpDataGateway` here and nothing else in the
- * application moves: every screen, guard and resource already depends on the
- * abstract class rather than on the implementation.
+ * Two implementations sit behind the same abstract {@link DataGateway}: the
+ * live API and an in-memory dataset. Nothing else in the application knows
+ * which is in use, because every screen, guard and resource depends on the
+ * abstract class.
+ *
+ * The mock is not dead weight. It is what makes the app runnable without a
+ * backend, and it is what the component tests use, so a UI regression does not
+ * need a database and Keycloak to reproduce.
  */
-export function provideData(): EnvironmentProviders {
-  return makeEnvironmentProviders([{ provide: DataGateway, useClass: MockDataGateway }]);
+export interface DataOptions {
+  /**
+   * Use the in-memory dataset instead of the API. Intended for the standalone
+   * demo build and for tests; a deployment always talks to the API.
+   */
+  readonly useMockData?: boolean;
+}
+
+export function provideData(options: DataOptions = {}): EnvironmentProviders {
+  const gateway = options.useMockData ? MockDataGateway : HttpDataGateway;
+
+  return makeEnvironmentProviders([
+    // withFetch uses the browser's fetch rather than XHR, which is what makes
+    // request cancellation actually propagate when a user navigates away from a
+    // slow screen.
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    { provide: DataGateway, useClass: gateway },
+  ]);
 }

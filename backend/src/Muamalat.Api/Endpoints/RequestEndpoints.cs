@@ -146,6 +146,7 @@ public static class RequestEndpoints
             .Take(Paging.Clamp(pageSize))
             .Select(r => new RequestSummaryDto(
                 r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
+                r.ApplicantUserId, r.ApplicantDisplayName,
                 r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt,
                 r.ClosedAt, r.AssignedToDepartment, null))
             .ToListAsync(cancellationToken);
@@ -183,6 +184,7 @@ public static class RequestEndpoints
             .Select(r => new
             {
                 r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey, r.WorkflowVersion,
+                r.ApplicantUserId, r.ApplicantDisplayName,
                 r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt,
                 r.AssignedToDepartment, r.WorkflowDefinitionId
             })
@@ -214,6 +216,7 @@ public static class RequestEndpoints
 
             return new RequestSummaryDto(
                 r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
+                r.ApplicantUserId, r.ApplicantDisplayName,
                 r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt,
                 r.ClosedAt, r.AssignedToDepartment, sla);
         }).ToList();
@@ -413,6 +416,8 @@ public sealed record RequestSummaryDto(
     string ReferenceNumber,
     string ServiceType,
     string WorkflowKey,
+    string ApplicantUserId,
+    string ApplicantDisplayName,
     string CurrentStateCode,
     DateTimeOffset SubmittedAt,
     DateTimeOffset CurrentStateEnteredAt,
@@ -428,6 +433,8 @@ public sealed record RequestDetailDto(
     string ServiceType,
     string WorkflowKey,
     int WorkflowVersion,
+    string ApplicantUserId,
+    string ApplicantDisplayName,
     string CurrentStateCode,
     string CurrentStateNameEn,
     string CurrentStateNameAr,
@@ -453,6 +460,7 @@ public sealed record RequestDetailDto(
 
         return new RequestDetailDto(
             r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey, r.WorkflowVersion,
+            r.ApplicantUserId, r.ApplicantDisplayName,
             r.CurrentStateCode, state?.NameEn ?? r.CurrentStateCode, state?.NameAr ?? r.CurrentStateCode,
             r.IsClosed, r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt, r.DecisionAt,
             r.AssignedToDepartment, r.FeePaid, sla,
