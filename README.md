@@ -289,24 +289,60 @@ and that the security headers are actually present on the response.
 
 ## Screenshots
 
-<!--
-  INTENTIONALLY EMPTY.
+Every image below was captured from the running stack: a real Keycloak sign in, real
+requests moved by the workflow engine, and a database seeded through that same engine so
+the audit chains genuinely verify. Nothing here is mocked.
 
-  Screenshots go here once the application is running end to end. Capture them from the
-  real app at 1440x900, save them under docs/screenshots/, and reference them below.
+### Citizen
 
-  Planned set, in this order:
-    1. citizen-new-request.png   Citizen submitting a commercial licence renewal
-    2. citizen-timeline.png      Request timeline showing the stages passed and the current one
-    3. officer-queue.png         Officer's department queue with SLA badges (on track / at risk / breached)
-    4. supervisor-sla-board.png  Supervisor SLA board with an escalated case
-    5. admin-workflow-designer.png  Admin editing a workflow definition, showing version and publish state
-    6. audit-chain-verify.png    Audit trail with chain verification result
-    7. arabic-rtl.png            The same screen in Arabic, right to left
+Requests the applicant has filed, with the live service level position of each one.
 
-  Do not add placeholder or mocked images. An empty section is honest; a fabricated
-  screenshot is not.
--->
+![Citizen request list](docs/screenshots/02-citizen-requests.png)
+
+### Arabic, right to left
+
+Not a translated string table: the layout mirrors. Navigation, tables, icons and reading
+order all flip, using CSS logical properties rather than direction overrides.
+
+![Arabic right to left](docs/screenshots/03-citizen-arabic-rtl.png)
+
+### Officer work queue
+
+Ordered by how close each case is to its deadline, with breach timers.
+
+![Officer work queue](docs/screenshots/04-officer-queue.png)
+
+### Case detail
+
+The actions offered come from the workflow engine, not from the browser. The engine is the
+only place the rules are enforced, so a client that derived its own copy would drift the
+moment a definition was edited.
+
+![Officer case detail](docs/screenshots/05-officer-request-detail.png)
+
+### Supervisor oversight
+
+Departmental workload, where cases are getting stuck, and what has breached.
+
+The on time figure is reconstructed from the audit trail rather than counting sweep events.
+The sweep only ever inspects open requests, so a case that breached and then closed between
+two sweeps leaves no event behind, and counting events silently overstates performance.
+
+![Supervisor dashboard](docs/screenshots/06-supervisor-dashboard.png)
+
+### Administrator
+
+Workflow definitions and versions. Definitions are data, so a new government service is
+configuration rather than a release.
+
+![Admin workflows](docs/screenshots/07-admin-workflows.png)
+
+### Sign in and mobile
+
+| Sign in | Mobile |
+| --- | --- |
+| ![Sign in](docs/screenshots/01-sign-in.png) | ![Mobile](docs/screenshots/08-citizen-mobile.png) |
+
 
 *No screenshots yet. They will be captured from the running application rather than mocked.*
 
