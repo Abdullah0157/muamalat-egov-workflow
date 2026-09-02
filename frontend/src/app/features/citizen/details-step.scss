@@ -1,0 +1,52 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.details-step__fieldset {
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+}
+
+.details-step__legend {
+  padding: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+.details-step__hint {
+  max-inline-size: var(--layout-prose-max);
+  margin-block-start: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+// Two columns on a comfortable screen, one on a phone. A form field never
+// exceeds a readable measure, which is why the columns are capped rather than
+// stretched across a wide monitor.
+.details-step__grid {
+  display: grid;
+  gap: var(--space-5);
+  max-inline-size: 52rem;
+  margin-block-start: var(--space-5);
+}
+
+@include m.up(m.$bp-md) {
+  .details-step__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  // Long prose answers get the full measure rather than half of it.
+  .details-step__field--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.details-step__field {
+  min-inline-size: 0;
+}

@@ -1,0 +1,17 @@
+@use 'mixins' as m;
+
+// The shell already pads the worksurface, so the page only owns the rhythm
+// between its own blocks.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+// The empty and error states are the whole content of the page when they show,
+// so they are given the same panel every other block on the page sits in.
+// Their own stylesheets already own the padding and the alignment.
+app-empty-state,
+app-error-state {
+  @include m.panel;
+}

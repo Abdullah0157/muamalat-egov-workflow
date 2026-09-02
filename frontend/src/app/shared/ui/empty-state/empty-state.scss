@@ -1,0 +1,55 @@
+@use 'mixins' as m;
+
+// Generous, not wasteful. Enough room that the message does not look like an
+// error squeezed into a row, not so much that a user has to scroll past it.
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-10);
+  padding-inline: var(--space-6);
+  text-align: center;
+}
+
+// Quiet on purpose. A neutral glyph reads as information; a coloured one reads
+// as a warning about something the user has not done.
+.empty-state__icon {
+  color: var(--text-disabled);
+  margin-block-end: var(--space-1);
+}
+
+.empty-state__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.empty-state__description {
+  max-inline-size: var(--layout-prose-max);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.empty-state__action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+
+.empty-state__action:empty {
+  display: none;
+}
+
+@include m.down(m.$bp-sm) {
+  :host {
+    padding-block: var(--space-8);
+    padding-inline: var(--space-4);
+  }
+}

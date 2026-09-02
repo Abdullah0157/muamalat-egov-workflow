@@ -1,0 +1,110 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.skeleton__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// The base is a visible tint rather than a transparent box, so a skeleton still
+// reads as "something is coming" when the sweep below is switched off.
+.skeleton {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: var(--control-height-sm);
+  overflow: hidden;
+  background-color: var(--surface-active);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton--text {
+  block-size: 0.7rem;
+  border-radius: var(--radius-xs);
+}
+
+.skeleton--heading {
+  block-size: 1.1rem;
+  max-inline-size: 18rem;
+}
+
+.skeleton--block {
+  block-size: var(--control-height-lg);
+}
+
+.skeleton--circle {
+  inline-size: var(--control-height-lg);
+  block-size: var(--control-height-lg);
+  border-radius: var(--radius-pill);
+}
+
+// The sweep. It moves along the inline axis, so it is mirrored in Arabic for
+// the same reason a chevron is: it reads as travelling with the text.
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--surface-raised) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.7;
+  animation: skeleton-sweep 1.6s var(--ease-standard) infinite;
+
+  @include m.mirror-in-rtl;
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: -100% 0;
+  }
+
+  to {
+    background-position: 200% 0;
+  }
+}
+
+// Reduced motion leaves the flat tint, not an empty box. Stated here as well as
+// in the global reset because "no animation" and "invisible" are one typo apart.
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    display: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Table variant. Matches the data table's row rhythm so the page does not jump
+// when the real rows arrive.
+// -----------------------------------------------------------------------------
+.skeleton-table {
+  inline-size: 100%;
+  border: 1px solid var(--table-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.skeleton-table__row {
+  display: grid;
+  grid-template-columns: repeat(var(--skeleton-columns, 4), minmax(0, 1fr));
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--table-border);
+}
+
+.skeleton-table__row:last-child {
+  border-block-end: 0;
+}
+
+.skeleton-table__row--header {
+  background-color: var(--table-header-bg);
+}

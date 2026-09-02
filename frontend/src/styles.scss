@@ -1,0 +1,10 @@
+// =============================================================================
+// Muamalat global stylesheet.
+// Load order is meaningful: tokens define the vocabulary, everything after it
+// only consumes that vocabulary.
+// =============================================================================
+
+@use 'styles/tokens';
+@use 'styles/reset';
+@use 'styles/typography';
+@use 'styles/utilities';

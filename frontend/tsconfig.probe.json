@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["jasmine"] },
+  "include": ["src/app/shared/**/*.ts", "src/app/core/**/*.ts", "src/app/layout/**/*.ts"]
+}

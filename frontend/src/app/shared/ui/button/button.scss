@@ -1,0 +1,144 @@
+@use 'mixins' as m;
+
+:host {
+  display: inline-flex;
+  max-inline-size: 100%;
+}
+
+:host(.btn-host--block) {
+  display: flex;
+  inline-size: 100%;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--control-height-md);
+  padding-inline: var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.btn:focus-visible {
+  @include m.focus-ring;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn__label:empty {
+  display: none;
+}
+
+// A busy button must not shift width while the spinner replaces the icon, so
+// both occupy the same box.
+.btn__icon {
+  margin-block: -0.125rem;
+}
+
+// -----------------------------------------------------------------------------
+// Sizes
+// -----------------------------------------------------------------------------
+.btn--sm {
+  min-block-size: var(--control-height-sm);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  gap: var(--space-1);
+}
+
+.btn--lg {
+  min-block-size: var(--control-height-lg);
+  padding-inline: var(--space-5);
+  font-size: var(--text-md);
+}
+
+// -----------------------------------------------------------------------------
+// Variants
+// -----------------------------------------------------------------------------
+.btn--primary {
+  background-color: var(--brand-solid);
+  border-color: var(--brand-solid);
+  color: var(--brand-on-solid);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--brand-solid-hover);
+  border-color: var(--brand-solid-hover);
+}
+
+.btn--primary:active:not(:disabled) {
+  background-color: var(--brand-solid-active);
+  border-color: var(--brand-solid-active);
+}
+
+.btn--secondary {
+  background-color: var(--surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.btn--secondary:active:not(:disabled) {
+  background-color: var(--surface-active);
+}
+
+.btn--ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.btn--ghost:active:not(:disabled) {
+  background-color: var(--surface-active);
+}
+
+.btn--danger {
+  background-color: var(--danger-solid);
+  border-color: var(--danger-solid);
+  color: var(--danger-on-solid);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background-color: var(--danger-solid-hover);
+  border-color: var(--danger-solid-hover);
+}
+
+.btn--link {
+  min-block-size: auto;
+  padding: 0;
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--text-link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.btn--link:hover:not(:disabled) {
+  color: var(--text-link-hover);
+}
+
+// The busy spinner respects reduced motion through the global rule in the
+// reset, which pins animation duration for everything.

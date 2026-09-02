@@ -1,0 +1,46 @@
+:host {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--icon-size, 1rem);
+  block-size: var(--icon-size, 1rem);
+}
+
+:host(.icon--sm) {
+  --icon-size: 0.875rem;
+}
+
+:host(.icon--md) {
+  --icon-size: 1rem;
+}
+
+:host(.icon--lg) {
+  --icon-size: 1.25rem;
+}
+
+:host(.icon--xl) {
+  --icon-size: 1.5rem;
+}
+
+.icon__glyph {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+// Icons that encode a direction of travel are flipped in RTL. Icons that do not
+// (clock, user, document) never receive this class, so they keep their
+// orientation and stay legible.
+:host-context([dir='rtl']) .icon__glyph--mirrored {
+  transform: scaleX(-1);
+}
+
+:host(.icon--spin) .icon__glyph {
+  animation: icon-spin 900ms linear infinite;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

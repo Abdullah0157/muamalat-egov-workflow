@@ -1,0 +1,95 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+}
+
+// The glyph aligns with the first line of text rather than the centre of a
+// message that may run to several lines.
+.alert__icon {
+  margin-block-start: 0.15em;
+  flex: none;
+}
+
+.alert__content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.alert__heading {
+  font-weight: var(--weight-semibold);
+}
+
+.alert__heading + .alert__body:not(:empty) {
+  margin-block-start: var(--space-1);
+}
+
+.alert__body {
+  color: inherit;
+}
+
+.alert__body:empty {
+  display: none;
+}
+
+.alert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.alert__actions:empty {
+  display: none;
+  margin-block-start: 0;
+}
+
+// Pinned to the trailing edge by flex order, not by a physical inset, so it
+// lands on the correct side in both writing directions.
+.alert__dismiss {
+  flex: none;
+  margin-block-start: -0.125rem;
+  margin-inline-end: calc(var(--space-1) * -1);
+}
+
+// -----------------------------------------------------------------------------
+// Tones. Soft fill plus a hairline, matching the badge treatment, so a banner
+// and a chip about the same thing look related.
+// -----------------------------------------------------------------------------
+:host(.alert--info) {
+  background-color: var(--info-soft);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+:host(.alert--success) {
+  background-color: var(--success-soft);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+:host(.alert--warning) {
+  background-color: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+:host(.alert--danger) {
+  background-color: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+@include m.down(m.$bp-sm) {
+  :host {
+    padding: var(--space-3);
+  }
+}

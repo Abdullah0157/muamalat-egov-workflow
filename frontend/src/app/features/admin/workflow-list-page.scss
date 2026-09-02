@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+// The version number and its status chip read as one value, so they stay on one
+// line and wrap together rather than splitting across the cell.
+.workflows__version {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}

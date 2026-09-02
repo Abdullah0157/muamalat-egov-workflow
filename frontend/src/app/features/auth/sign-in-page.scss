@@ -1,0 +1,205 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  min-block-size: 100dvh;
+  background-color: var(--surface-sunken);
+}
+
+.sign-in {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  padding: var(--space-10) var(--space-4) var(--space-12);
+}
+
+.sign-in__masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.sign-in__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sign-in__mark {
+  color: var(--brand-solid);
+}
+
+.sign-in__name {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.sign-in__authority {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.sign-in__language {
+  display: flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.sign-in__language-option {
+  min-block-size: var(--control-height-sm);
+  padding-inline: var(--space-3);
+  background-color: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+.sign-in__language-option + .sign-in__language-option {
+  border-inline-start: 1px solid var(--border-default);
+}
+
+.sign-in__language-option:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.sign-in__language-option--active {
+  background-color: var(--brand-solid);
+  color: var(--brand-on-solid);
+}
+
+.sign-in__language-option:focus-visible {
+  @include m.focus-ring-inset;
+}
+
+.sign-in__panel {
+  padding: var(--space-8);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  // The one place a shadow is used outside an overlay: this card is the only
+  // thing on the page and needs to sit clearly above the backdrop.
+  box-shadow: var(--shadow-sm);
+}
+
+.sign-in__title {
+  font-size: var(--text-xl);
+}
+
+.sign-in__intro {
+  margin-block-start: var(--space-2);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.sign-in__legend {
+  margin-block-start: var(--space-8);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.sign-in__hint {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.sign-in__accounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+
+.sign-in__account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  inline-size: 100%;
+  padding: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  text-align: start;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.sign-in__account:hover:not(:disabled) {
+  background-color: var(--surface-selected);
+  border-color: var(--brand-solid);
+}
+
+.sign-in__account:focus-visible {
+  @include m.focus-ring;
+}
+
+.sign-in__account:disabled {
+  opacity: 0.6;
+}
+
+.sign-in__account-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.sign-in__account-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.sign-in__account-title {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.sign-in__account-description {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-tertiary);
+}
+
+.sign-in__account-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.sign-in__footer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-tertiary);
+}
+
+@include m.down(m.$bp-md) {
+  .sign-in {
+    padding-block: var(--space-6);
+  }
+
+  .sign-in__panel {
+    padding: var(--space-5);
+  }
+
+  .sign-in__account {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+}

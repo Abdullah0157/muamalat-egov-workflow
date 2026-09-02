@@ -1,0 +1,90 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  min-block-size: 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  background-color: var(--surface-raised);
+  border-inline-end: 1px solid var(--border-subtle);
+}
+
+.nav__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-3);
+}
+
+.nav__section + .nav__section {
+  margin-block-start: var(--space-6);
+}
+
+.nav__heading {
+  margin-block-end: var(--space-2);
+  padding-inline: var(--space-2);
+}
+
+.nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  // A leading marker rather than a full fill: quieter, and it follows the
+  // writing direction because the border is logical.
+  border-inline-start: 3px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.nav__link:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.nav__link:focus-visible {
+  @include m.focus-ring(-2px);
+}
+
+.nav__link--active {
+  background-color: var(--surface-selected);
+  border-inline-start-color: var(--brand-solid);
+  color: var(--brand-text);
+  font-weight: var(--weight-semibold);
+}
+
+.nav__account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-block-start: 1px solid var(--border-subtle);
+  background-color: var(--surface-inset);
+}
+
+.nav__account-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.nav__signout {
+  margin-block-start: var(--space-1);
+  inline-size: 100%;
+}

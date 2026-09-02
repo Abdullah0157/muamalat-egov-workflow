@@ -1,0 +1,233 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+app-error-state {
+  @include m.panel;
+}
+
+// -----------------------------------------------------------------------------
+// Layout: record and rail
+// -----------------------------------------------------------------------------
+.detail__layout {
+  display: grid;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+// The rail is a fixed measure and the record takes the rest, so the summary
+// stays scannable on a wide monitor instead of stretching to fill it.
+@include m.up(m.$bp-lg) {
+  .detail__layout {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.detail__main,
+.detail__rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+.detail__summary dd {
+  overflow-wrap: anywhere;
+}
+
+// -----------------------------------------------------------------------------
+// Deadline
+// -----------------------------------------------------------------------------
+.detail__deadline-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.detail__calendars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+// Calendar name first, then the date. Labelling both is the point: an unlabelled
+// pair of dates is two dates nobody can tell apart.
+.detail__calendar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.detail__calendar dt {
+  min-inline-size: 5rem;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.detail__calendar dd {
+  margin: 0;
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.detail__counter {
+  margin-block-start: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.detail__explanation {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+// -----------------------------------------------------------------------------
+// Documents
+// -----------------------------------------------------------------------------
+.detail__documents {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.detail__document {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.detail__document-icon {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.detail__document-body {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.detail__document-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.detail__document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+// A rejected document carries its reason, which is the only thing that tells the
+// applicant what to send instead.
+.detail__document-note {
+  margin-block-start: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--danger-text);
+}
+
+.detail__document-note-label {
+  display: block;
+  font-weight: var(--weight-semibold);
+}
+
+// -----------------------------------------------------------------------------
+// Response form
+// -----------------------------------------------------------------------------
+.detail__response-file {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  position: relative;
+}
+
+// Clipped rather than removed, so it keeps its place in the tab order and its
+// own label opens the picker.
+.detail__file-input {
+  @include m.visually-hidden;
+}
+
+.detail__file-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-height-md);
+  padding-inline: var(--space-4);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.detail__file-button:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface-hover);
+}
+
+.detail__file-input:focus-visible + .detail__file-button {
+  @include m.focus-ring;
+}
+
+.detail__file-hint {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.detail__file-chosen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.detail__file-name {
+  @include m.truncate;
+
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.detail__file-size {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}

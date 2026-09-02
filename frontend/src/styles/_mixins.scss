@@ -1,0 +1,123 @@
+// =============================================================================
+// Shared SCSS mixins for component stylesheets.
+//
+// Component styles reach these with `@use 'mixins' as m;`
+// (angular.json -> stylePreprocessorOptions.includePaths includes src/styles).
+//
+// Rule for everything in here: never use `left`, `right`, `margin-left`,
+// `padding-right`, `border-left`, `text-align: left|right`, or `translateX` in
+// a way that assumes writing direction. Logical properties only.
+// =============================================================================
+
+// Breakpoints. Desktop first product, but every one of these is a real
+// supported layout, not a courtesy.
+$bp-sm: 30rem; //   480px  phone
+$bp-md: 48rem; //   768px  large phone / small tablet
+$bp-lg: 64rem; //   1024px tablet landscape / small laptop
+$bp-xl: 80rem; //   1280px desktop
+$bp-2xl: 100rem; // 1600px wide desktop
+
+@mixin up($bp) {
+  @media (min-width: $bp) {
+    @content;
+  }
+}
+
+@mixin down($bp) {
+  @media (max-width: calc(#{$bp} - 0.0625rem)) {
+    @content;
+  }
+}
+
+// The single focus treatment used by every interactive component.
+@mixin focus-ring($offset: var(--focus-ring-offset)) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: $offset;
+}
+
+// Inset variant for controls that sit flush against an edge (table headers,
+// tab strips) where an outset ring would be clipped.
+@mixin focus-ring-inset {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// The standard panel: 1px border, flat surface, small radius.
+@mixin panel($radius: var(--radius-md)) {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: $radius;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Base for anything that looks like a text input.
+@mixin field-base($height: var(--control-height-md)) {
+  display: block;
+  inline-size: 100%;
+  min-block-size: $height;
+  padding-block: 0;
+  padding-inline: var(--space-3);
+  background-color: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+
+  &::placeholder {
+    color: var(--field-placeholder);
+  }
+
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--field-border-hover);
+  }
+
+  &:focus-visible {
+    border-color: var(--field-border-focus);
+    @include focus-ring(1px);
+  }
+
+  &:disabled {
+    background-color: var(--field-bg-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--field-border-invalid);
+  }
+}
+
+// Mirror an icon that encodes direction (chevrons, arrows, indents).
+// Icons that do not encode direction (clock, user, document) must NOT use this.
+@mixin mirror-in-rtl {
+  :host-context([dir='rtl']) & {
+    transform: scaleX(-1);
+  }
+}
+
+// Applies to the host element itself.
+@mixin mirror-host-in-rtl {
+  :host-context([dir='rtl']) {
+    transform: scaleX(-1);
+  }
+}

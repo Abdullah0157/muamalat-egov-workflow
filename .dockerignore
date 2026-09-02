@@ -1,0 +1,51 @@
+# Build context for both infra/Dockerfile.api and infra/Dockerfile.web is the repository
+# root. Without this file the daemon would ship node_modules, every bin/obj tree and the
+# whole .git history to the builder on every build.
+#
+# Note the deliberate absence of a blanket `*` allowlist pattern: the two images need
+# different subtrees (backend/ and frontend/ + infra/), so this is a denylist.
+
+# Version control and CI
+.git
+.gitignore
+.github
+
+# Secrets and local environment
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+
+# .NET build output. Copying a host bin/obj into the image poisons the build with
+# artefacts compiled against a different SDK and defeats layer caching.
+**/bin
+**/obj
+**/artifacts
+**/TestResults
+**/*.user
+**/*.suo
+**/.vs
+
+# Node
+**/node_modules
+**/dist
+**/.angular
+**/npm-debug.log*
+**/coverage
+**/.eslintcache
+
+# Documentation and infrastructure that no image needs. infra/ itself is NOT excluded:
+# Dockerfile.web copies infra/nginx.conf and infra/web-entrypoint.sh from the context.
+docs
+LICENSE
+**/*.md
+
+# IDE and OS
+.idea
+**/.vscode
+**/.DS_Store
+**/Thumbs.db
+**/*.swp

@@ -1,0 +1,169 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Legend
+//
+// Colour, a word and a shape. The shapes are what keep the three buckets apart
+// on a monochrome printout and for a reader who cannot separate the hues.
+// -----------------------------------------------------------------------------
+.workload__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.workload__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.workload__swatch {
+  flex: none;
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+}
+
+.workload__swatch--on-track {
+  background-color: var(--success-solid);
+}
+
+.workload__swatch--at-risk {
+  background-color: var(--warning-solid);
+  // A diamond. Distinct from the square at a glance and still legible at 12px.
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.workload__swatch--breached {
+  background-color: var(--danger-solid);
+  border-radius: var(--radius-pill);
+}
+
+// -----------------------------------------------------------------------------
+// Plot
+// -----------------------------------------------------------------------------
+.workload__plot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.workload__bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.workload__bar-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  font-size: var(--text-xs);
+}
+
+.workload__department {
+  @include m.truncate;
+
+  color: var(--text-secondary);
+}
+
+.workload__count {
+  flex: none;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+// The track is the full width of the card, so the longest bar reaching its end
+// is the visual statement that this department carries the most open work.
+.workload__track {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  block-size: var(--space-4);
+  background-color: var(--chart-track);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+// `flex-shrink: 1` lets a row whose minimums would overflow give the space back
+// proportionally rather than push past the end of the track.
+.workload__segment {
+  flex: 0 1 auto;
+  min-inline-size: var(--space-1);
+}
+
+.workload__segment--on-track {
+  background-color: var(--success-solid);
+}
+
+.workload__segment--at-risk {
+  background-color: var(--warning-solid);
+}
+
+.workload__segment--breached {
+  background-color: var(--danger-solid);
+}
+
+// -----------------------------------------------------------------------------
+// The accessible equivalent. Visible, because the counts are worth reading.
+// -----------------------------------------------------------------------------
+.workload__table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.workload__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.workload__table th,
+.workload__table td {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-block-end: 1px solid var(--table-border);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.workload__table thead th {
+  background-color: var(--table-header-bg);
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.workload__table tbody th {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.workload__table tbody tr:last-child th,
+.workload__table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.workload__numeric {
+  text-align: end;
+}

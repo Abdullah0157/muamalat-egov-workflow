@@ -1,0 +1,100 @@
+@use 'mixins' as m;
+
+:host {
+  display: inline-flex;
+}
+
+.icon-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  // Square by construction: the same value drives both axes, so the hit target
+  // never collapses to the width of the glyph.
+  inline-size: var(--control-height-md);
+  block-size: var(--control-height-md);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.icon-btn:focus-visible {
+  @include m.focus-ring;
+}
+
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+// -----------------------------------------------------------------------------
+// Sizes. `lg` is the touch size: 34px is comfortable with a mouse but below the
+// 44px target that a finger needs, so toolbars on tablets use `lg`.
+// -----------------------------------------------------------------------------
+.icon-btn--sm {
+  inline-size: var(--control-height-sm);
+  block-size: var(--control-height-sm);
+}
+
+.icon-btn--lg {
+  inline-size: calc(var(--control-height-lg) + var(--space-1));
+  block-size: calc(var(--control-height-lg) + var(--space-1));
+}
+
+// -----------------------------------------------------------------------------
+// Variants. There is no primary treatment on purpose: a solid brand button with
+// no words is a guessing game, so the primary action always carries a label.
+// -----------------------------------------------------------------------------
+// The ghost variant is the only one placed on surfaces that carry their own
+// foreground, such as the dark masthead. Those three values are exposed as
+// custom properties so such a surface can retint the button from outside
+// without reaching into its internals. Everywhere else the defaults apply.
+.icon-btn--ghost {
+  background-color: transparent;
+  color: var(--icon-btn-color, var(--text-secondary));
+}
+
+.icon-btn--ghost:hover:not(:disabled) {
+  background-color: var(--icon-btn-hover-bg, var(--surface-hover));
+  color: var(--icon-btn-hover-color, var(--text-primary));
+}
+
+.icon-btn--ghost:active:not(:disabled) {
+  background-color: var(--icon-btn-active-bg, var(--surface-active));
+}
+
+.icon-btn--secondary {
+  background-color: var(--surface-raised);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+.icon-btn--secondary:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.icon-btn--secondary:active:not(:disabled) {
+  background-color: var(--surface-active);
+}
+
+.icon-btn--danger {
+  background-color: transparent;
+  color: var(--danger-text);
+}
+
+.icon-btn--danger:hover:not(:disabled) {
+  background-color: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+
+// A pressed toggle keeps a filled background so the state survives greyscale.
+.icon-btn[aria-pressed='true'] {
+  background-color: var(--surface-selected);
+  border-color: var(--brand-border);
+  color: var(--brand-text);
+}

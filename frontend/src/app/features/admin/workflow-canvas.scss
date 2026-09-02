@@ -1,0 +1,223 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+// -----------------------------------------------------------------------------
+// Stage. The diagram scrolls inside its own box so the page body never scrolls
+// sideways, and the block start padding leaves room for a self transition to
+// bulge out above the top row without being clipped.
+// -----------------------------------------------------------------------------
+.canvas__scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  max-block-size: 32rem;
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.canvas__stage {
+  position: relative;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  padding: var(--space-10) var(--space-6) var(--space-6);
+}
+
+// The three layers are all positioned, so paint order follows document order and
+// no z-index is needed: wires under the nodes, chips over both.
+.canvas__wires {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.canvas__wire {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.canvas__wire--forward {
+  stroke: var(--brand-solid);
+}
+
+.canvas__wire--reject {
+  stroke: var(--danger-solid);
+}
+
+.canvas__wire--moreInfo {
+  stroke: var(--warning-solid);
+}
+
+.canvas__wire--escalate {
+  stroke: var(--accent-solid);
+}
+
+.canvas__wire--selected {
+  stroke-width: 3;
+}
+
+.canvas__head--forward {
+  fill: var(--brand-solid);
+}
+
+.canvas__head--reject {
+  fill: var(--danger-solid);
+}
+
+.canvas__head--moreInfo {
+  fill: var(--warning-solid);
+}
+
+.canvas__head--escalate {
+  fill: var(--accent-solid);
+}
+
+// -----------------------------------------------------------------------------
+// Nodes. Placed logically, so column one is the leading column in both writing
+// directions and the whole diagram mirrors with no override rules.
+// -----------------------------------------------------------------------------
+.canvas__grid {
+  position: relative;
+  display: grid;
+  grid-auto-columns: 11.5rem;
+  grid-auto-rows: minmax(6rem, auto);
+  gap: var(--space-8) var(--space-20);
+}
+
+.canvas__node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  text-align: start;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.canvas__node:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface-hover);
+}
+
+.canvas__node:focus-visible {
+  @include m.focus-ring;
+}
+
+// Start: a heavier leading edge, which stays on the correct side in Arabic.
+.canvas__node--start {
+  border-inline-start: 3px solid var(--brand-solid);
+}
+
+// End: a filled marker, so the terminal states are legible at a glance and in
+// greyscale. The kind chip carries the word as well.
+.canvas__node--end::after {
+  content: '';
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-3);
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  background-color: var(--success-solid);
+  border-radius: var(--radius-xs);
+}
+
+.canvas__node--selected {
+  border-color: var(--brand-solid);
+  background-color: var(--surface-selected);
+}
+
+.canvas__node--selected .canvas__node-name {
+  color: var(--brand-text);
+}
+
+.canvas__node-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+.canvas__node-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-start: auto;
+  font-size: var(--text-2xs);
+  color: var(--text-tertiary);
+}
+
+.canvas__node-fact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  @include m.truncate;
+}
+
+// -----------------------------------------------------------------------------
+// Transition chips. A zero sized flex anchor centres the chip on the measured
+// midpoint of the arrow in both directions; a translate would have to know which
+// way the line runs.
+// -----------------------------------------------------------------------------
+.canvas__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.canvas__anchor {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 0;
+  block-size: 0;
+}
+
+.canvas__edge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-inline-size: 7rem;
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  color: var(--text-secondary);
+  pointer-events: auto;
+}
+
+.canvas__edge:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.canvas__edge:focus-visible {
+  @include m.focus-ring(1px);
+}
+
+.canvas__edge--selected {
+  background-color: var(--surface-selected);
+  border-color: var(--brand-solid);
+  color: var(--brand-text);
+  font-weight: var(--weight-semibold);
+}
+
+.canvas__edge-label {
+  min-inline-size: 0;
+  @include m.truncate;
+}

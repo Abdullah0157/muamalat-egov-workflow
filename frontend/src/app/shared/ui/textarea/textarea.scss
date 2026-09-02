@@ -1,0 +1,45 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.textarea__control {
+  @include m.field-base;
+
+  padding-block: var(--space-2);
+  line-height: var(--leading-normal);
+  // Vertical only: a horizontally resizable box breaks the form grid, and the
+  // browser's corner grip is the one affordance users already know.
+  resize: vertical;
+}
+
+.textarea__control[readonly] {
+  background-color: var(--surface-inset);
+  color: var(--text-secondary);
+}
+
+// Auto growing boxes are driven from script, so the grip would fight the
+// measurement. The ceiling is here rather than in the component because it is a
+// layout decision, not a behaviour.
+.textarea__control--auto-grow {
+  resize: none;
+  overflow-y: auto;
+  max-block-size: 18rem;
+}
+
+.textarea__counter {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  text-align: end;
+}
+
+// Near the limit the count is worth noticing. It is still only a colour change
+// on a number that is already visible and already announced, never the sole
+// carrier of the message.
+.textarea__counter--near-limit {
+  color: var(--warning-text);
+  font-weight: var(--weight-medium);
+}

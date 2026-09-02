@@ -1,0 +1,161 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Period control
+//
+// Real radios inside a real fieldset, the same technique the settings drawer
+// uses. Arrow key navigation, the grouped announcement and the "one of these"
+// semantics all come from the platform; the segmented look is only paint.
+// -----------------------------------------------------------------------------
+.dashboard__period {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+// The overline treatment comes from the global utility, which already drops the
+// uppercasing in Arabic. Only the browser's default legend padding is reset here.
+.dashboard__period-legend {
+  padding: 0;
+}
+
+.dashboard__segmented {
+  display: flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.dashboard__segment {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.dashboard__segment + .dashboard__segment {
+  border-inline-start: 1px solid var(--border-default);
+}
+
+.dashboard__radio {
+  @include m.visually-hidden;
+}
+
+.dashboard__segment-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--control-height-md);
+  padding-inline: var(--space-3);
+  background-color: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.dashboard__segment-face:hover {
+  background-color: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.dashboard__radio:checked + .dashboard__segment-face {
+  background-color: var(--brand-solid);
+  color: var(--brand-on-solid);
+  font-weight: var(--weight-medium);
+}
+
+.dashboard__radio:focus-visible + .dashboard__segment-face {
+  @include m.focus-ring-inset;
+}
+
+// On a phone the three labels cannot share a row without truncating, and a
+// truncated "Last 90 days" is not a control anybody can use with confidence.
+@include m.down(m.$bp-sm) {
+  .dashboard__segmented {
+    flex-direction: column;
+  }
+
+  .dashboard__segment + .dashboard__segment {
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--border-default);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Headline figures
+// -----------------------------------------------------------------------------
+.dashboard__figures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+// Six tiles across on a wide worksurface, folding down to one on a phone. The
+// minimum is generous enough that "Average processing time" never wraps to four
+// lines inside its tile.
+.dashboard__kpis {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.dashboard__note {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+// -----------------------------------------------------------------------------
+// Charts
+// -----------------------------------------------------------------------------
+.dashboard__charts {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@include m.up(m.$bp-xl) {
+  .dashboard__charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Escalations: date on one line, age under it, so the pair reads as one fact.
+// -----------------------------------------------------------------------------
+.dashboard__raised {
+  display: block;
+  color: var(--text-primary);
+}
+
+.dashboard__age {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+// -----------------------------------------------------------------------------
+// Loading. The placeholders take the shape of the real layout, so the page
+// settles once when the figures arrive rather than jumping twice.
+// -----------------------------------------------------------------------------
+.dashboard__skeleton-tile {
+  block-size: calc(var(--space-20) + var(--space-8));
+}
+
+.dashboard__skeleton-chart {
+  block-size: calc(var(--space-20) * 4);
+}

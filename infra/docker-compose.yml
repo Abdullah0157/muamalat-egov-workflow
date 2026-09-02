@@ -1,0 +1,232 @@
+# Muamalat: full local stack.
+#
+#   cp infra/.env.example infra/.env
+#   docker compose -f infra/docker-compose.yml up --build
+#
+# Compose treats infra/ as the project directory (it is the directory of the first -f
+# file), so infra/.env is picked up automatically and the relative paths below resolve
+# against infra/ as well.
+#
+# Startup is ordered entirely by healthchecks. There is no sleep, no wait-for-it script
+# and no retry loop in application code to compensate for a race: postgres and keycloak
+# must report healthy before the API is started, and the API must report healthy before
+# the web tier is started.
+
+name: muamalat
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL: the application database. Workflow definitions, service requests
+  # and the append-only audit chain all live here.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: muamalat-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-muamalat}
+      POSTGRES_USER: ${POSTGRES_USER:-muamalat}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required. Run cp infra/.env.example infra/.env}"
+      # Keep the cluster in a subdirectory of the mount point. Postgres refuses to
+      # initialise into a directory that already contains lost+found or similar.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      # Exposed only so you can attach psql or a GUI client from the host. Nothing in the
+      # compose network uses this mapping; services reach postgres on 5432 internally.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # -U and -d matter: pg_isready with no database still answers "accepting
+      # connections" during the initdb bootstrap phase, when the application database does
+      # not exist yet, which would let the API start too early.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-muamalat} -d ${POSTGRES_DB:-muamalat} -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks: [muamalat]
+
+  # ---------------------------------------------------------------------------
+  # Keycloak: OIDC identity provider. Imports the muamalat realm on first start.
+  #
+  # Deliberately has no volume. Keycloak state is ephemeral in this stack, so every
+  # `docker compose up` produces a realm that exactly matches the JSON committed to git.
+  # The alternative (a persisted H2 file) means editing the realm export appears to do
+  # nothing, because --import-realm skips realms that already exist. Data created through
+  # the admin console survives `restart` but not `down`.
+  #
+  # Production would run `start` (not `start-dev`) with KC_DB=postgres and TLS.
+  # ---------------------------------------------------------------------------
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: muamalat-keycloak
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD is required. Run cp infra/.env.example infra/.env}"
+
+      # Pins the public base URL, and therefore the `iss` claim on every issued token, to
+      # what the browser actually uses. Without this, Keycloak derives the issuer from the
+      # Host header and tokens minted through localhost:8081 would not validate against
+      # metadata fetched through keycloak:8080.
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}
+
+      # Lets server-to-server callers (the API fetching OIDC discovery and JWKS) use the
+      # in-network hostname instead of being handed localhost URLs they cannot reach.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+
+      KC_HTTP_ENABLED: "true"
+
+      # Exposes /health/* and /metrics on the management port 9000.
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+
+      KC_LOG_LEVEL: info
+    volumes:
+      # Read-only: the container must never be able to rewrite the committed realm.
+      - ./keycloak/realm-muamalat.json:/opt/keycloak/data/import/realm-muamalat.json:ro
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
+    healthcheck:
+      # The Keycloak image ships no curl and no wget, so this uses bash's /dev/tcp
+      # redirection to speak HTTP directly. /health/ready is on the management interface
+      # (port 9000), not the application port.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          cat <&3 | grep -q '"status": "UP"'
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      # Realm import plus Quarkus augmentation takes a while on a cold start.
+      start_period: 45s
+    networks: [muamalat]
+
+  # ---------------------------------------------------------------------------
+  # API: ASP.NET Core minimal APIs. Owns the workflow engine and the audit chain.
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    image: muamalat/api:local
+    container_name: muamalat-api
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_HTTP_PORTS: "8080"
+
+      # Double underscore is the .NET configuration separator, so each of these binds to
+      # the matching IConfiguration path (ConnectionStrings:Muamalat, Authentication:Authority,
+      # and so on). The key names below must track backend/src/Muamalat.Api/appsettings.json.
+      ConnectionStrings__Muamalat: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-muamalat};Username=${POSTGRES_USER:-muamalat};Password=${POSTGRES_PASSWORD};Include Error Detail=true;Maximum Pool Size=30"
+
+      # Authority is the IN-NETWORK Keycloak URL, not the browser-facing one, and that is
+      # deliberate. JwtBearer uses Authority for two different things:
+      #
+      #   1. where to FETCH OIDC discovery and JWKS  -> must be reachable from this container,
+      #      so it has to be keycloak:8080, never localhost:8081
+      #   2. which issuer to ACCEPT                  -> taken from the `issuer` field of the
+      #      fetched discovery document, not from this string
+      #
+      # Keycloak is configured with KC_HOSTNAME plus KC_HOSTNAME_BACKCHANNEL_DYNAMIC, so a
+      # discovery request arriving on keycloak:8080 answers with
+      #   issuer:   http://localhost:8081/realms/muamalat   (matches the token's iss)
+      #   jwks_uri: http://keycloak:8080/realms/muamalat/...  (reachable from here)
+      # which is exactly the combination that makes both halves work. Verified against
+      # Keycloak 26.4; see docs/ARCHITECTURE.md section 2.
+      Authentication__Authority: "${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}/realms/${KEYCLOAK_REALM:-muamalat}"
+      Authentication__Audience: ${KEYCLOAK_API_CLIENT_ID:-muamalat-api}
+      # Plaintext metadata is acceptable here and only here. The API's own options validator
+      # refuses this outside the Development environment.
+      Authentication__AllowHttpMetadata: "true"
+      Authentication__ClockSkewSeconds: "30"
+
+      Storage__DocumentRoot: /var/lib/muamalat/documents
+      Storage__MaxDocumentBytes: ${MAX_DOCUMENT_BYTES:-10485760}
+
+      SlaSweep__Enabled: ${SLA_SWEEP_ENABLED:-true}
+      SlaSweep__IntervalSeconds: ${SLA_SWEEP_INTERVAL_SECONDS:-60}
+
+      # The SPA is served same-origin through nginx, so CORS is not on the critical path.
+      # This entry exists for developers running `ng serve` against the containerised API.
+      Cors__AllowedOrigins__0: "http://localhost:${WEB_PORT:-4200}"
+
+      Serilog__MinimumLevel__Default: ${LOG_LEVEL:-Information}
+    volumes:
+      # Uploaded supporting documents. The image creates this path owned by the `app` user,
+      # so Docker gives the fresh named volume the same ownership and the non-root process
+      # can write to it without a chown sidecar.
+      - api-documents:/var/lib/muamalat/documents
+    ports:
+      - "${API_PORT:-8080}:8080"
+    healthcheck:
+      # /health/ready must check the database and the OIDC metadata endpoint.
+      # /health/live (not used for orchestration) should stay dependency-free.
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [muamalat]
+
+  # ---------------------------------------------------------------------------
+  # Web: Angular bundle served by nginx, which also reverse-proxies /api.
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    image: muamalat/web:local
+    container_name: muamalat-web
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      WEB_API_UPSTREAM: ${WEB_API_UPSTREAM:-http://api:8080}
+      WEB_API_BASE_URL: "/api"
+      WEB_KEYCLOAK_ORIGIN: ${WEB_KEYCLOAK_ORIGIN:-http://localhost:8081}
+      WEB_KEYCLOAK_REALM: ${KEYCLOAK_REALM:-muamalat}
+      WEB_KEYCLOAK_CLIENT_ID: ${KEYCLOAK_WEB_CLIENT_ID:-muamalat-web}
+    ports:
+      - "${WEB_PORT:-4200}:8080"
+    healthcheck:
+      # busybox wget, present in nginx:alpine. Hits nginx's own /healthz so an API outage
+      # does not restart the web container.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks: [muamalat]
+
+networks:
+  muamalat:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    name: muamalat-postgres-data
+  api-documents:
+    name: muamalat-api-documents

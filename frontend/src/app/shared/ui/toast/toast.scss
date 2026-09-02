@@ -1,0 +1,111 @@
+@use 'mixins' as m;
+
+// Pinned to the block end and inline end corner, which is the trailing corner
+// in both writing directions. `pointer-events` is off on the region itself so
+// the strip of empty space above the stack does not swallow clicks on the page.
+:host {
+  position: fixed;
+  inset-block-end: var(--space-4);
+  inset-inline-end: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  inline-size: min(100% - var(--space-8), 24rem);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4) var(--space-3);
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  // The one place a shadow is doing real work: a toast has no context around it
+  // and has to read as sitting above whatever it covers.
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md);
+  // The leading rule is what carries the tone, so the body stays on the neutral
+  // surface and the text keeps its normal contrast.
+  border-inline-start: 3px solid var(--border-strong);
+  color: var(--text-primary);
+  pointer-events: auto;
+}
+
+.toast__icon {
+  flex: none;
+  margin-block-start: 0.15em;
+}
+
+.toast__content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.toast__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.toast__description {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.toast__content app-button {
+  margin-block-start: var(--space-2);
+}
+
+.toast__dismiss {
+  flex: none;
+  margin-block-start: calc(var(--space-1) * -1);
+  margin-inline-end: calc(var(--space-2) * -1);
+}
+
+// -----------------------------------------------------------------------------
+// Tones
+// -----------------------------------------------------------------------------
+.toast--info {
+  border-inline-start-color: var(--info-solid);
+}
+
+.toast--info .toast__icon {
+  color: var(--info-text);
+}
+
+.toast--success {
+  border-inline-start-color: var(--success-solid);
+}
+
+.toast--success .toast__icon {
+  color: var(--success-text);
+}
+
+.toast--warning {
+  border-inline-start-color: var(--warning-solid);
+}
+
+.toast--warning .toast__icon {
+  color: var(--warning-text);
+}
+
+.toast--danger {
+  border-inline-start-color: var(--danger-solid);
+}
+
+.toast--danger .toast__icon {
+  color: var(--danger-text);
+}
+
+@include m.down(m.$bp-sm) {
+  :host {
+    inset-inline: var(--space-3);
+    inset-block-end: var(--space-3);
+    inline-size: auto;
+  }
+}

@@ -1,0 +1,55 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.date-picker__input {
+  @include m.field-base;
+
+  // A date input sizes itself to its own field text, which leaves it narrower
+  // than every other control in the same form. Full width keeps the column.
+  inline-size: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+// The platform indicator is the affordance users know, so it stays; it only
+// needs to pick up the theme's text colour in dark mode.
+.date-picker__input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.date-picker__input:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+.date-picker__input:disabled::-webkit-calendar-picker-indicator {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+// Both calendars, wrapping onto separate lines on a narrow screen rather than
+// being truncated. This line is a read back of what was entered, so it is quiet.
+.date-picker__calendars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.date-picker__calendar {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.date-picker__calendar-name {
+  color: var(--text-tertiary);
+}
+
+.date-picker__calendar-name::after {
+  content: ':';
+}

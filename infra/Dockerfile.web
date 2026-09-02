@@ -1,0 +1,71 @@
+# syntax=docker/dockerfile:1.7
+#
+# Muamalat web image: Angular built with Node, served by nginx.
+#
+# Build context is the REPOSITORY ROOT because both frontend/ and infra/ are needed:
+#   docker build -f infra/Dockerfile.web -t muamalat-web .
+
+# ---------------------------------------------------------------------------
+# Stage 1: build the Angular bundle
+# ---------------------------------------------------------------------------
+FROM node:24-alpine AS build
+
+WORKDIR /build
+
+# Manifest first so `npm ci` is cached independently of application source.
+COPY frontend/package.json frontend/package-lock.json ./
+
+# `npm ci` (not `npm install`) so the lockfile is authoritative and the build is
+# reproducible. It fails loudly if package.json and package-lock.json disagree, which is
+# exactly what CI should do.
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm ci --no-audit --no-fund
+
+COPY frontend/ ./
+
+RUN npm run build
+
+# The Angular application builder writes to dist/<project>/browser, but that path moves if
+# `outputPath` is set in angular.json or the project is renamed. Rather than hardcode a
+# path that silently produces an empty image when it changes, locate index.html and fail
+# the build if it is missing.
+RUN set -eux; \
+    index="$(find dist -maxdepth 4 -name index.html -print -quit)"; \
+    if [ -z "$index" ]; then \
+      echo "ERROR: no index.html found under dist/. Did 'npm run build' actually emit a browser bundle?" >&2; \
+      find dist -maxdepth 3 >&2 || true; \
+      exit 1; \
+    fi; \
+    echo "Using Angular output directory: $(dirname "$index")"; \
+    mkdir -p /site; \
+    cp -R "$(dirname "$index")/." /site/
+
+# ---------------------------------------------------------------------------
+# Stage 2: serve
+# ---------------------------------------------------------------------------
+FROM nginx:alpine AS runtime
+
+# nginx.conf is a template. The entrypoint runs envsubst over it so the API upstream and
+# the Keycloak origin in the CSP can change per environment without rebuilding the image.
+COPY infra/nginx.conf          /etc/nginx/nginx.conf.template
+COPY infra/web-entrypoint.sh   /usr/local/bin/web-entrypoint.sh
+COPY --from=build /site        /usr/share/nginx/html
+
+# Run unprivileged. The entrypoint writes the rendered config to /tmp and a runtime
+# config.json into the web root, so both need to be writable by uid 101 (nginx).
+# /var/cache/nginx holds the proxy and client-body temp directories.
+RUN chmod +x /usr/local/bin/web-entrypoint.sh \
+ && mkdir -p /var/cache/nginx \
+ && chown -R nginx:nginx /var/cache/nginx /usr/share/nginx/html
+
+# 8080, not 80: a non-root process cannot bind a privileged port.
+EXPOSE 8080
+
+USER nginx
+
+ENTRYPOINT ["/usr/local/bin/web-entrypoint.sh"]
+
+LABEL org.opencontainers.image.title="Muamalat Web" \
+      org.opencontainers.image.description="Angular SPA for the Muamalat e-government portal" \
+      org.opencontainers.image.source="https://github.com/your-org/muamalat-egov-workflow" \
+      org.opencontainers.image.licenses="MIT"

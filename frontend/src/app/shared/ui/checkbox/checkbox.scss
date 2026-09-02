@@ -1,0 +1,123 @@
+@use 'mixins' as m;
+
+// Two columns: the box, then everything that talks about it. The hint and the
+// error sit under the statement rather than under the box, so a wrapped
+// declaration keeps one clean text edge in both writing directions.
+:host {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+  align-items: start;
+}
+
+// Matches the line box of the first line of the label so the box sits on the
+// text rather than above it.
+.checkbox__control {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1;
+  grid-row: 1;
+  block-size: calc(var(--text-base) * var(--leading-normal));
+}
+
+.checkbox__input {
+  appearance: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  background-color: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.checkbox__input:hover:not(:disabled) {
+  border-color: var(--field-border-hover);
+}
+
+// The ring is stated here rather than left to the global rule because the
+// control has had its own appearance removed, and losing the ring on a box this
+// small would make the form unusable from the keyboard.
+.checkbox__input:focus-visible {
+  @include m.focus-ring;
+}
+
+.checkbox__input:checked,
+.checkbox__input:indeterminate {
+  background-color: var(--brand-solid);
+  border-color: var(--brand-solid);
+}
+
+.checkbox__input:disabled {
+  background-color: var(--field-bg-disabled);
+  border-color: var(--border-subtle);
+  cursor: not-allowed;
+}
+
+.checkbox__input:disabled:checked,
+.checkbox__input:disabled:indeterminate {
+  background-color: var(--text-disabled);
+  border-color: var(--text-disabled);
+}
+
+:host(.checkbox--invalid) .checkbox__input:not(:checked):not(:indeterminate) {
+  border-color: var(--field-border-invalid);
+}
+
+// The mark is a drawn glyph over the box, never the fill colour on its own.
+.checkbox__glyph {
+  position: absolute;
+  color: var(--brand-on-solid);
+  pointer-events: none;
+}
+
+.checkbox__label {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+:host(.checkbox--disabled) .checkbox__label {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.checkbox__required {
+  color: var(--danger-text);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.checkbox__hint {
+  grid-column: 2;
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-tertiary);
+}
+
+.checkbox__error {
+  grid-column: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--danger-text);
+}
+
+.checkbox__error app-icon {
+  margin-block-start: 0.1em;
+}

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Muamalat.Api/Muamalat.Api.csproj" />
+    <Project Path="src/Muamalat.Domain/Muamalat.Domain.csproj" />
+    <Project Path="src/Muamalat.Infrastructure/Muamalat.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Muamalat.Tests/Muamalat.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,82 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-10);
+  padding-inline: var(--space-6);
+  text-align: center;
+}
+
+// Coloured, unlike the empty state glyph, because this one is reporting a
+// problem. The word in the heading carries the same meaning for anyone who
+// cannot see the colour.
+.error-state__icon {
+  color: var(--danger-text);
+  margin-block-end: var(--space-1);
+}
+
+:host(.error-state--permission) .error-state__icon {
+  color: var(--warning-text);
+}
+
+:host(.error-state--not-found) .error-state__icon {
+  color: var(--text-tertiary);
+}
+
+.error-state__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.error-state__description {
+  max-inline-size: var(--layout-prose-max);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.error-state__reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.error-state__reference-label {
+  color: var(--text-tertiary);
+}
+
+.error-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+
+.error-state__actions:empty {
+  display: none;
+}
+
+@include m.down(m.$bp-sm) {
+  :host {
+    padding-block: var(--space-8);
+    padding-inline: var(--space-4);
+  }
+}

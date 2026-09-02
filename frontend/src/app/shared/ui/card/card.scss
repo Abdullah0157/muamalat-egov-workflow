@@ -1,0 +1,107 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+:host(.card--sunken) {
+  background-color: var(--surface-inset);
+}
+
+.card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.card__heading {
+  min-inline-size: 0;
+  flex: 1 1 16rem;
+}
+
+.card__title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+.card__title:empty {
+  display: none;
+}
+
+.card__subtitle {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-tertiary);
+}
+
+.card__subtitle:empty {
+  display: none;
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.card__actions:empty {
+  display: none;
+}
+
+.card__body {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding: var(--space-5);
+}
+
+:host(.card--flush) .card__body {
+  padding: 0;
+}
+
+.card__body:empty {
+  display: none;
+}
+
+.card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-block-start: 1px solid var(--border-subtle);
+  background-color: var(--surface-inset);
+  border-end-start-radius: var(--radius-md);
+  border-end-end-radius: var(--radius-md);
+}
+
+.card__footer:empty {
+  display: none;
+}
+
+@include m.down(m.$bp-md) {
+  .card__header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .card__body {
+    padding: var(--space-4);
+  }
+
+  .card__footer {
+    padding: var(--space-3) var(--space-4);
+  }
+}

@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+// Chip above, counter below. Stacked rather than inline so a long duration in
+// Arabic does not push the chip out of the column.
+.citizen-request-table__sla {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.citizen-request-table__counter {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}

@@ -1,0 +1,128 @@
+@use 'mixins' as m;
+
+// The marker diameter is shared by the marker and by the rail it sits on, so
+// the two cannot drift apart when the dense variant changes it.
+:host {
+  --timeline-marker: var(--space-6);
+
+  display: block;
+}
+
+:host(.timeline--dense) {
+  --timeline-marker: var(--space-5);
+}
+
+.timeline__item {
+  position: relative;
+  display: flex;
+  gap: var(--space-3);
+  padding-block-end: var(--space-5);
+}
+
+:host(.timeline--dense) .timeline__item {
+  gap: var(--space-2);
+  padding-block-end: var(--space-3);
+}
+
+.timeline__item:last-child {
+  padding-block-end: 0;
+}
+
+// The connecting rail. Positioned with a logical inset so it runs down the
+// inline start edge in English and down the inline start edge in Arabic, which
+// is the opposite side of the screen, without a direction specific rule.
+.timeline__item:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(var(--timeline-marker) / 2 - 1px);
+  inset-block-start: var(--timeline-marker);
+  inset-block-end: 0;
+  inline-size: 2px;
+  background-color: var(--border-subtle);
+}
+
+.timeline__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--timeline-marker);
+  block-size: var(--timeline-marker);
+  background-color: var(--neutral-soft);
+  border: 1px solid var(--neutral-border);
+  border-radius: var(--radius-pill);
+  color: var(--neutral-text);
+}
+
+.timeline__marker--brand {
+  background-color: var(--brand-soft);
+  border-color: var(--brand-border);
+  color: var(--brand-text);
+}
+
+.timeline__marker--success {
+  background-color: var(--success-soft);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.timeline__marker--warning {
+  background-color: var(--warning-soft);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.timeline__marker--danger {
+  background-color: var(--danger-soft);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.timeline__content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding-block-start: 0.125rem;
+}
+
+.timeline__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+:host(.timeline--dense) .timeline__title {
+  font-size: var(--text-sm);
+}
+
+.timeline__description {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.timeline__meta {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+// Both readings of the same instant, wrapping onto two lines rather than being
+// truncated on a narrow screen.
+.timeline__time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin-block-start: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.timeline__relative::before {
+  content: '\00b7';
+  margin-inline-end: var(--space-2);
+}

@@ -1,0 +1,77 @@
+@use 'mixins' as m;
+
+// A hairline rather than a shaded band: the header is the start of the page, not
+// a separate object floating above it.
+:host {
+  display: block;
+  padding-block: var(--space-4) var(--space-4);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.page-header__breadcrumbs:not(:empty) {
+  margin-block-end: var(--space-2);
+}
+
+// Heading and actions share a line while there is room for both, then the
+// actions wrap under the heading rather than shrinking the title.
+.page-header__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+}
+
+.page-header__heading {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+}
+
+.page-header__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+.page-header__description {
+  max-inline-size: var(--layout-prose-max);
+  margin-block-start: var(--space-1);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.page-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.page-header__meta:not(:empty) {
+  margin-block-start: var(--space-3);
+}
+
+.page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+@include m.down(m.$bp-md) {
+  :host {
+    padding-block: var(--space-3);
+  }
+
+  .page-header__title {
+    font-size: var(--text-xl);
+  }
+
+  // At this width the actions are on their own line anyway, so they take the
+  // full row and stay comfortably tappable instead of huddling at the edge.
+  .page-header__actions {
+    flex: 1 1 100%;
+  }
+}

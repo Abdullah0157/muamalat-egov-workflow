@@ -1,0 +1,460 @@
+// =============================================================================
+// Muamalat design tokens
+// -----------------------------------------------------------------------------
+// Visual thesis: a serious ministry system. Deep institutional navy as the single
+// brand colour, cool slate neutrals, a restrained brass accent reserved for
+// official emphasis (seals, official reference numbers), and four semantic
+// families. Crisp 1px borders carry the structure; shadows are used sparingly
+// and only for genuinely floating surfaces (dialog, drawer, toast, menu).
+//
+// Two layers of tokens:
+//   1. Palette (raw ramps)     -- never used directly by components.
+//   2. Semantic (role) tokens  -- the only thing components are allowed to use.
+// Only the semantic layer is re-declared for dark mode, which is what keeps the
+// two themes in sync.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1. Palette
+// -----------------------------------------------------------------------------
+@mixin palette {
+  // Brand: deep institutional navy.
+  --palette-brand-50: #f1f6fb;
+  --palette-brand-100: #dfeaf5;
+  --palette-brand-200: #c0d5e9;
+  --palette-brand-300: #8fb4d4;
+  --palette-brand-400: #578cb8;
+  --palette-brand-500: #33689c;
+  --palette-brand-600: #235282;
+  --palette-brand-700: #1b4269;
+  --palette-brand-800: #163553;
+  --palette-brand-900: #122a43;
+  --palette-brand-950: #0b1a2b;
+
+  // Neutral: cool slate. Carries almost the whole interface.
+  --palette-neutral-0: #ffffff;
+  --palette-neutral-25: #fbfcfd;
+  --palette-neutral-50: #f6f8fa;
+  --palette-neutral-100: #eef1f5;
+  --palette-neutral-200: #e1e6ed;
+  --palette-neutral-300: #cad2dc;
+  --palette-neutral-400: #9ba6b5;
+  --palette-neutral-500: #707d8e;
+  --palette-neutral-600: #566171;
+  --palette-neutral-700: #414b58;
+  --palette-neutral-800: #2b333e;
+  --palette-neutral-850: #222932;
+  --palette-neutral-900: #1a2028;
+  --palette-neutral-950: #10151b;
+
+  // Accent: brass. Official emphasis only, never decoration.
+  --palette-accent-50: #fbf7ea;
+  --palette-accent-100: #f5ecd0;
+  --palette-accent-200: #e8d69b;
+  --palette-accent-400: #c9a227;
+  --palette-accent-600: #97771a;
+  --palette-accent-700: #7a6013;
+  --palette-accent-900: #493a0a;
+
+  // Semantic ramps.
+  --palette-success-50: #e9f5ee;
+  --palette-success-100: #cfe8da;
+  --palette-success-200: #a5d3ba;
+  --palette-success-500: #1a7f45;
+  --palette-success-600: #146836;
+  --palette-success-700: #0f522b;
+  --palette-success-900: #08301a;
+
+  --palette-warning-50: #fdf4e4;
+  --palette-warning-100: #f8e4bf;
+  --palette-warning-200: #efcd8b;
+  --palette-warning-500: #b0761b;
+  --palette-warning-600: #8f5e10;
+  --palette-warning-700: #714a0b;
+  --palette-warning-900: #422b06;
+
+  --palette-danger-50: #fdedeb;
+  --palette-danger-100: #f9d5d1;
+  --palette-danger-200: #f0b0a9;
+  --palette-danger-500: #b32820;
+  --palette-danger-600: #94201a;
+  --palette-danger-700: #761914;
+  --palette-danger-900: #450e0b;
+
+  --palette-info-50: #ebf3fa;
+  --palette-info-100: #d2e4f2;
+  --palette-info-200: #a9c9e4;
+  --palette-info-500: #1c6ea8;
+  --palette-info-600: #165887;
+  --palette-info-700: #11466b;
+  --palette-info-900: #0a2940;
+}
+
+// -----------------------------------------------------------------------------
+// 2. Semantic tokens, light
+// -----------------------------------------------------------------------------
+@mixin theme-light {
+  color-scheme: light;
+
+  // Surfaces. "sunken" sits behind cards, "raised" is the card itself.
+  --surface-page: var(--palette-neutral-50);
+  --surface-sunken: var(--palette-neutral-100);
+  --surface-raised: var(--palette-neutral-0);
+  --surface-overlay: var(--palette-neutral-0);
+  --surface-inset: var(--palette-neutral-50);
+  --surface-hover: var(--palette-neutral-100);
+  --surface-active: var(--palette-neutral-200);
+  --surface-selected: var(--palette-brand-50);
+  --surface-disabled: var(--palette-neutral-100);
+  --surface-scrim: rgb(16 21 27 / 45%);
+
+  // Chrome (header and sidebar) is deliberately dark in light mode. Government
+  // systems read as more authoritative with a solid masthead, and it keeps the
+  // dense white worksurface visually separate from navigation.
+  --surface-chrome: var(--palette-brand-800);
+  --surface-chrome-hover: var(--palette-brand-700);
+  --surface-chrome-active: var(--palette-brand-600);
+  --border-chrome: var(--palette-brand-700);
+  --text-on-chrome: var(--palette-neutral-0);
+  --text-on-chrome-muted: var(--palette-brand-200);
+
+  // Text.
+  --text-primary: var(--palette-neutral-900);
+  --text-secondary: var(--palette-neutral-600);
+  --text-tertiary: var(--palette-neutral-500);
+  --text-disabled: var(--palette-neutral-400);
+  --text-inverse: var(--palette-neutral-0);
+  --text-link: var(--palette-brand-600);
+  --text-link-hover: var(--palette-brand-700);
+
+  // Borders.
+  --border-subtle: var(--palette-neutral-200);
+  --border-default: var(--palette-neutral-300);
+  --border-strong: var(--palette-neutral-400);
+  --border-inverse: var(--palette-brand-700);
+
+  // Brand roles.
+  --brand-solid: var(--palette-brand-700);
+  --brand-solid-hover: var(--palette-brand-800);
+  --brand-solid-active: var(--palette-brand-900);
+  --brand-on-solid: var(--palette-neutral-0);
+  --brand-soft: var(--palette-brand-50);
+  --brand-soft-hover: var(--palette-brand-100);
+  --brand-border: var(--palette-brand-200);
+  --brand-text: var(--palette-brand-700);
+
+  // Accent (brass).
+  --accent-soft: var(--palette-accent-50);
+  --accent-border: var(--palette-accent-200);
+  --accent-text: var(--palette-accent-700);
+  --accent-solid: var(--palette-accent-600);
+
+  // Status roles. Every one of these is always paired with an icon or a text
+  // label in the UI; colour alone never carries meaning.
+  --success-solid: var(--palette-success-600);
+  --success-soft: var(--palette-success-50);
+  --success-border: var(--palette-success-200);
+  --success-text: var(--palette-success-700);
+  --success-on-solid: var(--palette-neutral-0);
+
+  --warning-solid: var(--palette-warning-600);
+  --warning-soft: var(--palette-warning-50);
+  --warning-border: var(--palette-warning-200);
+  --warning-text: var(--palette-warning-700);
+  --warning-on-solid: var(--palette-neutral-0);
+
+  --danger-solid: var(--palette-danger-600);
+  --danger-solid-hover: var(--palette-danger-700);
+  --danger-soft: var(--palette-danger-50);
+  --danger-border: var(--palette-danger-200);
+  --danger-text: var(--palette-danger-700);
+  --danger-on-solid: var(--palette-neutral-0);
+
+  --info-solid: var(--palette-info-600);
+  --info-soft: var(--palette-info-50);
+  --info-border: var(--palette-info-200);
+  --info-text: var(--palette-info-700);
+  --info-on-solid: var(--palette-neutral-0);
+
+  --neutral-soft: var(--palette-neutral-100);
+  --neutral-border: var(--palette-neutral-300);
+  --neutral-text: var(--palette-neutral-700);
+
+  // Form controls.
+  --field-bg: var(--palette-neutral-0);
+  --field-bg-disabled: var(--palette-neutral-100);
+  --field-border: var(--palette-neutral-300);
+  --field-border-hover: var(--palette-neutral-400);
+  --field-border-focus: var(--palette-brand-600);
+  --field-border-invalid: var(--palette-danger-600);
+  --field-placeholder: var(--palette-neutral-400);
+
+  // Data table.
+  --table-header-bg: var(--palette-neutral-100);
+  --table-row-hover: var(--palette-neutral-50);
+  --table-row-selected: var(--palette-brand-50);
+  --table-border: var(--palette-neutral-200);
+
+  // Focus.
+  --focus-ring-color: var(--palette-brand-600);
+  --focus-ring-contrast: var(--palette-neutral-0);
+
+  // Elevation. Deliberately shallow: structure comes from borders, not shadows.
+  --shadow-xs: 0 1px 1px rgb(16 21 27 / 4%);
+  --shadow-sm: 0 1px 2px rgb(16 21 27 / 6%), 0 1px 3px rgb(16 21 27 / 4%);
+  --shadow-md: 0 2px 4px rgb(16 21 27 / 6%), 0 4px 12px rgb(16 21 27 / 8%);
+  --shadow-lg: 0 8px 16px rgb(16 21 27 / 10%), 0 16px 40px rgb(16 21 27 / 12%);
+
+  // Charts. Ordered for categorical use, distinguishable in both themes and
+  // safe for the common forms of colour vision deficiency.
+  --chart-1: var(--palette-brand-600);
+  --chart-2: #4a8fb5;
+  --chart-3: var(--palette-accent-600);
+  --chart-4: #6b7f96;
+  --chart-5: #8a5a9c;
+  --chart-6: #2f7f73;
+  --chart-grid: var(--palette-neutral-200);
+  --chart-axis: var(--palette-neutral-500);
+  --chart-track: var(--palette-neutral-200);
+}
+
+// -----------------------------------------------------------------------------
+// 3. Semantic tokens, dark
+// -----------------------------------------------------------------------------
+@mixin theme-dark {
+  color-scheme: dark;
+
+  --surface-page: var(--palette-neutral-950);
+  --surface-sunken: #0b0f14;
+  --surface-raised: var(--palette-neutral-900);
+  --surface-overlay: var(--palette-neutral-850);
+  --surface-inset: var(--palette-neutral-850);
+  --surface-hover: var(--palette-neutral-850);
+  --surface-active: var(--palette-neutral-800);
+  --surface-selected: #14283c;
+  --surface-disabled: var(--palette-neutral-850);
+  --surface-scrim: rgb(0 0 0 / 65%);
+
+  --surface-chrome: var(--palette-neutral-900);
+  --surface-chrome-hover: var(--palette-neutral-800);
+  --surface-chrome-active: var(--palette-neutral-700);
+  --border-chrome: var(--palette-neutral-800);
+  --text-on-chrome: var(--palette-neutral-100);
+  --text-on-chrome-muted: var(--palette-neutral-400);
+
+  --text-primary: #e8ecf1;
+  --text-secondary: #a6b1bf;
+  --text-tertiary: #808d9c;
+  --text-disabled: #5b6672;
+  --text-inverse: var(--palette-neutral-950);
+  --text-link: #7db2dd;
+  --text-link-hover: #a3caea;
+
+  --border-subtle: #232b35;
+  --border-default: #313a46;
+  --border-strong: #46515f;
+  --border-inverse: #313a46;
+
+  --brand-solid: var(--palette-brand-500);
+  --brand-solid-hover: var(--palette-brand-400);
+  --brand-solid-active: var(--palette-brand-300);
+  --brand-on-solid: #061119;
+  --brand-soft: #142433;
+  --brand-soft-hover: #1a2f42;
+  --brand-border: #27455f;
+  --brand-text: #8fb4d4;
+
+  --accent-soft: #2a2412;
+  --accent-border: #4d431f;
+  --accent-text: #d9bb5c;
+  --accent-solid: var(--palette-accent-400);
+
+  --success-solid: #2e9c5c;
+  --success-soft: #10261a;
+  --success-border: #245c3a;
+  --success-text: #74c894;
+  --success-on-solid: #04140a;
+
+  --warning-solid: #cf9127;
+  --warning-soft: #2a1f0c;
+  --warning-border: #5c4517;
+  --warning-text: #e2b45f;
+  --warning-on-solid: #1b1204;
+
+  --danger-solid: #d24a41;
+  --danger-solid-hover: #e05e55;
+  --danger-soft: #2c1210;
+  --danger-border: #62241f;
+  --danger-text: #f09b93;
+  --danger-on-solid: #1a0605;
+
+  --info-solid: #3d8fca;
+  --info-soft: #101f2c;
+  --info-border: #21455f;
+  --info-text: #86bde5;
+  --info-on-solid: #04121c;
+
+  --neutral-soft: var(--palette-neutral-800);
+  --neutral-border: #46515f;
+  --neutral-text: #c2ccd8;
+
+  --field-bg: #151b22;
+  --field-bg-disabled: #1c232b;
+  --field-border: #35404d;
+  --field-border-hover: #495564;
+  --field-border-focus: #6fa3d0;
+  --field-border-invalid: #d24a41;
+  --field-placeholder: #6b7788;
+
+  --table-header-bg: #171d25;
+  --table-row-hover: #1a212a;
+  --table-row-selected: #14283c;
+  --table-border: #232b35;
+
+  --focus-ring-color: #86bde5;
+  --focus-ring-contrast: var(--palette-neutral-950);
+
+  --shadow-xs: 0 1px 1px rgb(0 0 0 / 30%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%), 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 40%), 0 4px 12px rgb(0 0 0 / 40%);
+  --shadow-lg: 0 8px 16px rgb(0 0 0 / 45%), 0 16px 40px rgb(0 0 0 / 50%);
+
+  --chart-1: #5b9bd5;
+  --chart-2: #79c0e8;
+  --chart-3: #d9bb5c;
+  --chart-4: #93a2b5;
+  --chart-5: #b48ac4;
+  --chart-6: #55b3a4;
+  --chart-grid: #262e39;
+  --chart-axis: #808d9c;
+  --chart-track: #262e39;
+}
+
+// -----------------------------------------------------------------------------
+// 4. Theme-independent tokens
+// -----------------------------------------------------------------------------
+@mixin static-tokens {
+  // Typography. Latin stack first; the Arabic stack is swapped in on [lang='ar']
+  // (see _typography.scss) so Arabic never falls back to a Latin face.
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif;
+  --font-arabic:
+    'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Dubai', 'Geeza Pro', 'Segoe UI', Tahoma,
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', 'Courier New', monospace;
+
+  // Type scale. Base is 14px: this is a dense administrative product, not a
+  // marketing page.
+  --text-2xs: 0.6875rem; // 11px, table meta and overline only
+  --text-xs: 0.75rem; //    12px
+  --text-sm: 0.8125rem; //  13px
+  --text-base: 0.875rem; // 14px, body
+  --text-md: 1rem; //       16px
+  --text-lg: 1.125rem; //   18px
+  --text-xl: 1.3125rem; //  21px
+  --text-2xl: 1.625rem; //  26px
+  --text-3xl: 2rem; //      32px
+
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-overline: 0.06em;
+
+  // Spacing, 4px base.
+  --space-0: 0;
+  --space-1: 0.25rem; //  4
+  --space-2: 0.5rem; //   8
+  --space-3: 0.75rem; //  12
+  --space-4: 1rem; //     16
+  --space-5: 1.25rem; //  20
+  --space-6: 1.5rem; //   24
+  --space-7: 1.75rem; //  28
+  --space-8: 2rem; //     32
+  --space-10: 2.5rem; //  40
+  --space-12: 3rem; //    48
+  --space-16: 4rem; //    64
+  --space-20: 5rem; //    80
+
+  // Radii. Small and consistent. Nothing here is pill shaped except by intent.
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+
+  // Control sizing.
+  --control-height-sm: 1.75rem; //  28px
+  --control-height-md: 2.125rem; // 34px
+  --control-height-lg: 2.5rem; //   40px
+  --control-padding-sm: var(--space-2);
+  --control-padding-md: var(--space-3);
+  --control-padding-lg: var(--space-4);
+
+  // Focus.
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  // Motion. Short and functional; nothing bounces.
+  --duration-instant: 0ms;
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  // Stacking.
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-header: 200;
+  --z-menu: 300;
+  --z-drawer: 400;
+  --z-dialog: 500;
+  --z-toast: 600;
+
+  // Layout.
+  --layout-header-height: 3.5rem; //     56px
+  --layout-sidebar-width: 16.25rem; //   260px
+  --layout-sidebar-collapsed: 3.5rem; // 56px
+  --layout-content-max: 96rem; //        1536px
+  --layout-prose-max: 44rem;
+}
+
+// -----------------------------------------------------------------------------
+// 5. Application
+//
+// Order matters. The media query is written so that an explicit [data-theme]
+// always wins, in BOTH directions:
+//   - data-theme="light" inside a dark OS  -> the :not() excludes it from the query
+//   - data-theme="dark"  inside a light OS -> the explicit rule below applies
+// -----------------------------------------------------------------------------
+:root {
+  @include palette;
+  @include static-tokens;
+  @include theme-light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include theme-dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include theme-dark;
+}
+
+:root[data-theme='light'] {
+  @include theme-light;
+}

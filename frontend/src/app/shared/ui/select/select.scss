@@ -1,0 +1,49 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select__control {
+  @include m.field-base;
+
+  // The platform arrow is dropped so the control matches the text field, and is
+  // replaced by the product icon below.
+  appearance: none;
+  // Room for the icon at the trailing edge, which flips with the direction.
+  padding-inline-end: calc(var(--space-3) * 2 + 1rem);
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.select__control:disabled {
+  cursor: not-allowed;
+}
+
+// Positioned with a logical inset so it sits at the trailing edge in both
+// writing directions. It never takes the pointer, so a click anywhere in the
+// control still opens the list.
+.select__arrow {
+  position: absolute;
+  inset-inline-end: var(--space-3);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.select__control:disabled + .select__arrow {
+  color: var(--text-disabled);
+}
+
+// The list itself is drawn by the platform, but Firefox and Chrome take these
+// two from the control, and a dark theme needs them.
+.select__control option,
+.select__control optgroup {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+}

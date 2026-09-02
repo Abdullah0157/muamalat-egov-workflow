@@ -1,0 +1,12 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jasmine"]
+  },
+  /* Specs import application code, so the whole source tree has to be in the
+     program. Limiting this to *.spec.ts leaves every imported service and
+     component untyped at test time. */
+  "include": ["src/**/*.ts"]
+}

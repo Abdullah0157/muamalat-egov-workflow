@@ -1,0 +1,73 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.breadcrumbs__item,
+.breadcrumbs__ellipsis {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.breadcrumbs__crumb {
+  @include m.truncate;
+
+  max-inline-size: 18rem;
+  color: var(--text-tertiary);
+}
+
+.breadcrumbs__link {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.breadcrumbs__link:hover {
+  color: var(--text-link-hover);
+  text-decoration: underline;
+}
+
+.breadcrumbs__link:focus-visible {
+  @include m.focus-ring(1px);
+}
+
+// The page you are on: darker and heavier than the trail behind it.
+.breadcrumbs__crumb[aria-current='page'] {
+  color: var(--text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.breadcrumbs__separator {
+  flex: none;
+  color: var(--text-disabled);
+}
+
+// The ellipsis only earns its place once the trail is too long for the screen.
+.breadcrumbs__ellipsis {
+  display: none;
+}
+
+@include m.down(m.$bp-md) {
+  .breadcrumbs__item--collapsible {
+    display: none;
+  }
+
+  .breadcrumbs__ellipsis {
+    display: flex;
+  }
+
+  .breadcrumbs__crumb {
+    max-inline-size: 12rem;
+  }
+}

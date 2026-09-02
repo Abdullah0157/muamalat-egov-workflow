@@ -1,0 +1,155 @@
+@use 'mixins' as m;
+
+:host {
+  display: contents;
+}
+
+// -----------------------------------------------------------------------------
+// Scrim. Visibility is switched with a zero length transition rather than with
+// `display`, so the fade has something to animate on the way out.
+// -----------------------------------------------------------------------------
+.drawer__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  background-color: var(--surface-scrim);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    visibility 0s linear var(--duration-base);
+}
+
+.drawer__scrim--open {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    visibility 0s linear 0s;
+}
+
+// -----------------------------------------------------------------------------
+// Panel
+// -----------------------------------------------------------------------------
+.drawer__panel {
+  // Sizes are content widths. A filter panel and a preview panel should read as
+  // the same component at two settings.
+  --drawer-inline-size: 26rem;
+
+  // Which way "off screen" is. `--drawer-flow` is +1 when the line runs left to
+  // right and `--drawer-side` is +1 for the inline end edge, so the product is
+  // the physical direction the panel hides in. CSS has no logical transform,
+  // which is why this is expressed as a sign rather than as a property.
+  --drawer-flow: 1;
+  --drawer-side: 1;
+
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: var(--z-drawer);
+  display: flex;
+  flex-direction: column;
+  inline-size: min(100%, var(--drawer-inline-size));
+  background-color: var(--surface-overlay);
+  border-inline-start: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+  translate: calc(100% * var(--drawer-flow) * var(--drawer-side)) 0;
+  visibility: hidden;
+  transition:
+    translate var(--duration-base) var(--ease-standard),
+    visibility 0s linear var(--duration-base);
+}
+
+:host-context([dir='rtl']) .drawer__panel {
+  --drawer-flow: -1;
+}
+
+.drawer__panel--sm {
+  --drawer-inline-size: 20rem;
+}
+
+.drawer__panel--lg {
+  --drawer-inline-size: 34rem;
+}
+
+.drawer__panel--start {
+  --drawer-side: -1;
+
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  border-inline-start: 0;
+  border-inline-end: 1px solid var(--border-default);
+}
+
+.drawer__panel--open {
+  translate: 0 0;
+  visibility: visible;
+  transition:
+    translate var(--duration-base) var(--ease-standard),
+    visibility 0s linear 0s;
+}
+
+.drawer__panel:focus-visible {
+  @include m.focus-ring-inset;
+}
+
+.drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex: none;
+  padding: var(--space-4) var(--space-5);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.drawer__title {
+  min-inline-size: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.drawer__close {
+  flex: none;
+  margin-block-start: calc(var(--space-1) * -1);
+  margin-inline-end: calc(var(--space-2) * -1);
+}
+
+.drawer__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding: var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.drawer__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex: none;
+  padding: var(--space-3) var(--space-5);
+  border-block-start: 1px solid var(--border-subtle);
+  background-color: var(--surface-inset);
+}
+
+.drawer__footer:empty {
+  display: none;
+}
+
+@include m.down(m.$bp-sm) {
+  // A 26rem panel on a 360px phone leaves a strip of page that is too narrow to
+  // be useful and wide enough to be hit by accident.
+  .drawer__panel {
+    --drawer-inline-size: 100%;
+  }
+
+  .drawer__header,
+  .drawer__body,
+  .drawer__footer {
+    padding-inline: var(--space-4);
+  }
+}

@@ -1,0 +1,142 @@
+@use 'mixins' as m;
+
+:host {
+  display: contents;
+}
+
+// Sizes are content widths rather than viewport fractions: a confirmation and a
+// form dialog should look like the same component at two settings.
+.dialog {
+  --dialog-inline-size: 34rem;
+
+  margin: auto;
+  padding: 0;
+  inline-size: min(100% - var(--space-8), var(--dialog-inline-size));
+  max-inline-size: none;
+  max-block-size: min(100% - var(--space-8), 44rem);
+  overflow: hidden;
+  background-color: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+  z-index: var(--z-dialog);
+}
+
+// Only applied while open, so the user agent rule that hides a closed dialog
+// still wins. Writing `display: flex` unconditionally would leave the dialog on
+// screen the whole time.
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog--sm {
+  --dialog-inline-size: 24rem;
+}
+
+.dialog--lg {
+  --dialog-inline-size: 46rem;
+}
+
+.dialog::backdrop {
+  background-color: var(--surface-scrim);
+}
+
+.dialog__panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex: none;
+  padding: var(--space-4) var(--space-5);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.dialog__heading {
+  min-inline-size: 0;
+}
+
+.dialog__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.dialog__description {
+  margin-block-start: var(--space-1);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.dialog__close {
+  flex: none;
+  margin-block-start: calc(var(--space-1) * -1);
+  margin-inline-end: calc(var(--space-2) * -1);
+}
+
+// The body is the only part that scrolls, so the title and the actions stay
+// reachable however long the content is. `overscroll-behavior` stops a flick at
+// the end of the list from scrolling the page underneath.
+.dialog__body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding: var(--space-5);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialog__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex: none;
+  padding: var(--space-3) var(--space-5);
+  border-block-start: 1px solid var(--border-subtle);
+  background-color: var(--surface-inset);
+}
+
+.dialog__footer:empty {
+  display: none;
+}
+
+// -----------------------------------------------------------------------------
+// Narrow screens: a sheet anchored to the block end. It keeps the full height
+// available for a long form while leaving a strip of backdrop, which is what
+// tells a phone user there is a page behind this.
+// -----------------------------------------------------------------------------
+@include m.down(m.$bp-md) {
+  .dialog {
+    inline-size: 100%;
+    max-block-size: calc(100% - var(--space-8));
+    margin-block-start: auto;
+    margin-block-end: 0;
+    margin-inline: 0;
+    border-inline: 0;
+    border-block-end: 0;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .dialog__header,
+  .dialog__body,
+  .dialog__footer {
+    padding-inline: var(--space-4);
+  }
+
+  // Stacked full width actions: a row of small buttons is unusable with a thumb.
+  .dialog__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

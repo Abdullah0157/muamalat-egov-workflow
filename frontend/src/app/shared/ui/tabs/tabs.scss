@@ -1,0 +1,83 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+// The strip scrolls inside its own box, so eight tabs on a phone never make the
+// page scroll sideways. The rule under it runs the full width regardless.
+.tabs__strip {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.tabs__list {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  min-inline-size: max-content;
+}
+
+.tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  // The selected marker is a border on the block end edge, which stays on the
+  // underside of the strip in both writing directions.
+  border-block-end: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+// An outset ring on a tab is clipped by the scrolling strip, so it goes inside.
+.tabs__tab:focus-visible {
+  @include m.focus-ring-inset;
+}
+
+.tabs__tab:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-block-end-color: var(--border-default);
+}
+
+// Selection is carried by weight and by the rule, not by colour alone.
+.tabs__tab--selected {
+  color: var(--brand-text);
+  border-block-end-color: var(--brand-solid);
+  font-weight: var(--weight-semibold);
+}
+
+.tabs__tab:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.tabs__panels {
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Panel. Shared stylesheet, so these three rules sit next to the strip they
+// belong to.
+// -----------------------------------------------------------------------------
+:host(.tab-panel) {
+  display: block;
+  padding-block-start: var(--space-4);
+  min-inline-size: 0;
+}
+
+// Wins over the display rule above, which would otherwise defeat `hidden`.
+:host(.tab-panel[hidden]) {
+  display: none;
+}
+
+:host(.tab-panel):focus-visible {
+  @include m.focus-ring;
+}

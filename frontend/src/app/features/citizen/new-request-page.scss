@@ -1,0 +1,155 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+app-error-state {
+  @include m.panel;
+}
+
+// -----------------------------------------------------------------------------
+// The wizard
+// -----------------------------------------------------------------------------
+.wizard__form {
+  display: block;
+}
+
+.wizard__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+// The step number leads, in the overline treatment used for metadata across the
+// product, with the step name underneath it as the heading proper.
+.wizard__step-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-end: var(--space-5);
+}
+
+.wizard__step-heading:focus-visible {
+  @include m.focus-ring;
+}
+
+.wizard__step-count {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.wizard__step-name {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+.wizard__problems {
+  margin-block-end: var(--space-5);
+}
+
+.wizard__problem-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-start: var(--space-2);
+  padding-inline-start: var(--space-5);
+}
+
+.wizard__problem-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.wizard__problem-link:focus-visible {
+  @include m.focus-ring;
+}
+
+// The navigation bar is the card footer, which already aligns to the trailing
+// edge. Back is pushed to the leading edge so the two are never confused.
+.wizard__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+}
+
+.wizard__nav app-button:first-child {
+  margin-inline-end: auto;
+}
+
+// -----------------------------------------------------------------------------
+// The receipt
+// -----------------------------------------------------------------------------
+.wizard__success {
+  text-align: center;
+}
+
+.wizard__success-icon {
+  color: var(--success-text);
+}
+
+.wizard__success-title {
+  margin-block-start: var(--space-3);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.wizard__success-title:focus-visible {
+  @include m.focus-ring;
+}
+
+.wizard__success-description {
+  max-inline-size: var(--layout-prose-max);
+  margin-block-start: var(--space-2);
+  margin-inline: auto;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+// The reference is the one thing worth keeping off this screen, so it is given
+// the weight of a stamped number rather than a line of body text.
+.wizard__success-reference {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-start: var(--space-5);
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+}
+
+.wizard__success-reference-label {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.wizard__success-reference .u-reference {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.wizard__success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-6);
+}

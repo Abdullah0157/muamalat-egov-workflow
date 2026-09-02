@@ -1,0 +1,170 @@
+@use 'mixins' as m;
+
+// Shared by the marker and by the connector that lines up with its centre.
+:host {
+  --progress-marker: var(--space-6);
+
+  display: block;
+}
+
+.progress__list {
+  display: flex;
+  align-items: flex-start;
+}
+
+.progress__step {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding-inline: var(--space-2);
+  text-align: center;
+}
+
+// The connector runs from the centre of this step back to the centre of the
+// previous one. Both insets are logical, so in Arabic it runs the other way
+// without a mirrored rule; the equal `flex: 1 1 0` widths are what make the
+// hundred percent land exactly on the previous marker.
+.progress__step::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(var(--progress-marker) / 2 - 1px);
+  inset-inline-end: 50%;
+  inline-size: 100%;
+  block-size: 2px;
+  margin-inline-end: calc(var(--progress-marker) / 2 + var(--space-1));
+  background-color: var(--border-default);
+}
+
+.progress__step:first-child::before {
+  display: none;
+}
+
+.progress__step--complete::before {
+  background-color: var(--success-solid);
+}
+
+// -----------------------------------------------------------------------------
+// Markers. One distinct shape per state, never one shape in four colours.
+// -----------------------------------------------------------------------------
+.progress__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--progress-marker);
+  block-size: var(--progress-marker);
+  background-color: var(--surface-raised);
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  color: var(--text-tertiary);
+}
+
+.progress__step--complete .progress__marker {
+  background-color: var(--success-solid);
+  border-color: var(--success-solid);
+  color: var(--success-on-solid);
+}
+
+.progress__step--current .progress__marker {
+  border-color: var(--brand-solid);
+}
+
+// The filled centre of the step in play.
+.progress__step--current .progress__marker::after {
+  content: '';
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  background-color: var(--brand-solid);
+  border-radius: var(--radius-pill);
+}
+
+.progress__step--blocked .progress__marker {
+  background-color: var(--warning-solid);
+  border-color: var(--warning-solid);
+  color: var(--warning-on-solid);
+}
+
+// -----------------------------------------------------------------------------
+// Text
+// -----------------------------------------------------------------------------
+.progress__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.progress__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+}
+
+.progress__step--complete .progress__label {
+  color: var(--text-primary);
+}
+
+.progress__step--current .progress__label,
+.progress__step--blocked .progress__label {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.progress__description,
+.progress__meta {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-tertiary);
+}
+
+// -----------------------------------------------------------------------------
+// Narrow screens: the same list turns on its side. Markers stay on the inline
+// start edge and the connector runs down between them.
+// -----------------------------------------------------------------------------
+@include m.down(m.$bp-md) {
+  .progress__list {
+    display: block;
+  }
+
+  .progress__step {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding-inline: 0;
+    padding-block-end: var(--space-4);
+    text-align: start;
+  }
+
+  .progress__step:last-child {
+    padding-block-end: 0;
+  }
+
+  .progress__step:first-child::before {
+    display: block;
+  }
+
+  .progress__step:last-child::before {
+    display: none;
+  }
+
+  .progress__step::before {
+    inset-block-start: var(--progress-marker);
+    inset-block-end: 0;
+    inset-inline-start: calc(var(--progress-marker) / 2 - 1px);
+    inset-inline-end: auto;
+    inline-size: 2px;
+    block-size: auto;
+    margin-inline-end: 0;
+  }
+
+  .progress__text {
+    padding-block-start: 0.125rem;
+  }
+}

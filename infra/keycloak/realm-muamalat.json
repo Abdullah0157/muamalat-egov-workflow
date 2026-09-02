@@ -1,0 +1,255 @@
+{
+  "id": "muamalat",
+  "realm": "muamalat",
+  "displayName": "Muamalat",
+  "displayNameHtml": "<span>Muamalat e-Government Services</span>",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "ar"],
+  "defaultLocale": "en",
+  "accessTokenLifespan": 300,
+  "accessCodeLifespan": 60,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "offlineSessionIdleTimeout": 2592000,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "quickLoginCheckMilliSeconds": 1000,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "maxDeltaTimeSeconds": 43200,
+  "passwordPolicy": "length(10) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername(undefined)",
+
+  "roles": {
+    "realm": [
+      {
+        "name": "Citizen",
+        "description": "Submits service requests, uploads supporting documents and tracks the status of their own requests. Cannot see anybody else's request.",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "muamalat"
+      },
+      {
+        "name": "Officer",
+        "description": "Processes requests in their department's queue: reviews submissions, requests more information, and executes the workflow transitions their role is permitted to.",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "muamalat"
+      },
+      {
+        "name": "Supervisor",
+        "description": "Everything an Officer can do, plus approve, reject, reassign and escalate. Composite of Officer, because a supervisor who cannot do the work they supervise is an artificial restriction that ends in shared logins.",
+        "composite": true,
+        "composites": {
+          "realm": ["Officer"]
+        },
+        "clientRole": false,
+        "containerId": "muamalat"
+      },
+      {
+        "name": "Admin",
+        "description": "Configures services, departments, SLA policies and workflow definitions. Deliberately NOT composite of Supervisor: separation of duties means the person who authors a workflow should not also be able to approve requests flowing through it.",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "muamalat"
+      }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "muamalat-web",
+      "name": "Muamalat Web (Angular SPA)",
+      "description": "Public OIDC client for the citizen and officer portal. Authorization code flow with PKCE (S256). A browser cannot keep a secret, so this client has none.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "frontchannelLogout": true,
+      "fullScopeAllowed": true,
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://127.0.0.1:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://127.0.0.1:4200/*",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "client.use.lightweight.access.token.enabled": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "muamalat-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "muamalat-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles-flat",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "clientId": "muamalat-api",
+      "name": "Muamalat API",
+      "description": "The resource server. It exists so that 'muamalat-api' is a real client id and therefore a valid audience value, and so the API has service-account credentials if it ever needs to call Keycloak's admin REST API. It takes part in no browser flow.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "secret": "dev-only-not-a-real-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "frontchannelLogout": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": []
+    }
+  ],
+
+  "users": [
+    {
+      "username": "fatima.alsuwaidi",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Fatima",
+      "lastName": "Al Suwaidi",
+      "email": "fatima.alsuwaidi@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Citizen#2026", "temporary": false }
+      ],
+      "realmRoles": ["Citizen"]
+    },
+    {
+      "username": "omar.alharthy",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Omar",
+      "lastName": "Al Harthy",
+      "email": "omar.alharthy@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Citizen#2026", "temporary": false }
+      ],
+      "realmRoles": ["Citizen"]
+    },
+    {
+      "username": "noura.alkaabi",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Noura",
+      "lastName": "Al Kaabi",
+      "email": "noura.alkaabi@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Officer#2026", "temporary": false }
+      ],
+      "realmRoles": ["Officer"]
+    },
+    {
+      "username": "yousef.almazrouei",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Yousef",
+      "lastName": "Al Mazrouei",
+      "email": "yousef.almazrouei@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Officer#2026", "temporary": false }
+      ],
+      "realmRoles": ["Officer"]
+    },
+    {
+      "username": "mariam.albalushi",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Mariam",
+      "lastName": "Al Balushi",
+      "email": "mariam.albalushi@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Supervisor#2026", "temporary": false }
+      ],
+      "realmRoles": ["Supervisor"]
+    },
+    {
+      "username": "khalid.alnuaimi",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Khalid",
+      "lastName": "Al Nuaimi",
+      "email": "khalid.alnuaimi@muamalat.example",
+      "credentials": [
+        { "type": "password", "value": "Admin#2026!", "temporary": false }
+      ],
+      "realmRoles": ["Admin"]
+    }
+  ]
+}

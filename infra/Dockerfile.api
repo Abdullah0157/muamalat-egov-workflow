@@ -1,0 +1,92 @@
+# syntax=docker/dockerfile:1.7
+#
+# Muamalat API image.
+#
+# Build context is the REPOSITORY ROOT, not infra/, because the source lives in backend/:
+#   docker build -f infra/Dockerfile.api -t muamalat-api .
+# Compose does this for you (see infra/docker-compose.yml: build.context = ..).
+
+# ---------------------------------------------------------------------------
+# Stage 1: restore + publish
+# ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+# Quieter, more deterministic builds. NuGet gets an explicit package folder so the
+# BuildKit cache mount below has a stable target.
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    NUGET_PACKAGES=/nuget
+
+WORKDIR /src
+
+# Copy only the project files first so `dotnet restore` is cached independently of source
+# edits. Changing a .cs file must not re-download the NuGet graph.
+#
+# The trailing `*` on the optional files is deliberate: COPY fails only when NOTHING
+# matches, and *.slnx always matches, so this line keeps working whether or not the
+# solution later adopts Directory.Build.props / central package management.
+COPY backend/*.slnx \
+     backend/Directory.Build.props* \
+     backend/Directory.Packages.props* \
+     backend/nuget.config* \
+     backend/global.json* \
+     ./
+COPY backend/src/Muamalat.Api/Muamalat.Api.csproj                       src/Muamalat.Api/
+COPY backend/src/Muamalat.Domain/Muamalat.Domain.csproj                 src/Muamalat.Domain/
+COPY backend/src/Muamalat.Infrastructure/Muamalat.Infrastructure.csproj src/Muamalat.Infrastructure/
+
+# Only the API project is restored. Test packages have no business in a runtime image, and
+# restoring the whole solution here would drag them in.
+RUN --mount=type=cache,target=/nuget,sharing=locked \
+    dotnet restore src/Muamalat.Api/Muamalat.Api.csproj
+
+COPY backend/ ./
+
+RUN --mount=type=cache,target=/nuget,sharing=locked \
+    dotnet publish src/Muamalat.Api/Muamalat.Api.csproj \
+      --configuration Release \
+      --no-restore \
+      --output /app/publish \
+      -p:UseAppHost=false
+
+# ---------------------------------------------------------------------------
+# Stage 2: runtime
+# ---------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+# The aspnet image ships without an HTTP client, and the compose healthcheck needs one.
+# Installed as root before dropping privileges; apt lists are removed to keep the layer small.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Uploaded documents land here (Storage:DocumentRoot). It has to exist and be owned by the
+# runtime user before the process drops privileges, because a non-root process cannot
+# create a directory under /var/lib. Creating it here also means that when Compose mounts a
+# fresh named volume over this path, Docker seeds the volume with these permissions and no
+# chown sidecar container is needed.
+RUN mkdir -p /var/lib/muamalat/documents \
+ && chown -R app:app /var/lib/muamalat
+
+# `app` (uid/gid 1654) is created by the base image. Ownership is set during COPY so no
+# extra chown layer is needed.
+COPY --from=build --chown=app:app /app/publish ./
+
+# Kestrel binds 0.0.0.0:8080. Never 443 in-container: TLS terminates at the ingress.
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1
+
+EXPOSE 8080
+
+USER app
+
+ENTRYPOINT ["dotnet", "Muamalat.Api.dll"]
+
+LABEL org.opencontainers.image.title="Muamalat API" \
+      org.opencontainers.image.description="E-government service request and workflow API" \
+      org.opencontainers.image.source="https://github.com/your-org/muamalat-egov-workflow" \
+      org.opencontainers.image.licenses="MIT"

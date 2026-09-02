@@ -1,0 +1,189 @@
+@use 'mixins' as m;
+
+:host {
+  display: block;
+}
+
+.designer__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+// -----------------------------------------------------------------------------
+// Version bar
+// -----------------------------------------------------------------------------
+.designer__version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-6);
+}
+
+.designer__version-select {
+  display: block;
+  flex: 0 1 18rem;
+  min-inline-size: 12rem;
+}
+
+.designer__notes {
+  flex: 1 1 18rem;
+  padding-block-start: var(--space-6);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.designer__notice {
+  margin-block-start: var(--space-4);
+}
+
+.designer__findings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-4);
+  list-style: disc;
+}
+
+// -----------------------------------------------------------------------------
+// Board. The diagram and the two lists are both rendered; the breakpoint decides
+// which one is the interface. A node graph is not usable on a phone, and a list
+// that only exists as a fallback would rot.
+// -----------------------------------------------------------------------------
+.designer__hint {
+  margin-block-end: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.designer__lists {
+  display: none;
+}
+
+@include m.down(m.$bp-md) {
+  .designer__canvas {
+    display: none;
+  }
+
+  .designer__lists {
+    display: grid;
+    gap: var(--space-6);
+  }
+}
+
+.designer__list-title {
+  margin-block-end: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.designer__rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.designer__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline-end: var(--space-2);
+}
+
+.designer__row + .designer__row {
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.designer__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding: var(--space-3);
+  text-align: start;
+}
+
+.designer__row-main:hover {
+  background-color: var(--surface-hover);
+}
+
+.designer__row-main:focus-visible {
+  @include m.focus-ring-inset;
+}
+
+.designer__row-main[aria-current='true'] {
+  background-color: var(--surface-selected);
+}
+
+.designer__row-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  @include m.truncate;
+}
+
+.designer__row-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  @include m.truncate;
+}
+
+// -----------------------------------------------------------------------------
+// Editor panel
+// -----------------------------------------------------------------------------
+.designer__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.designer__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.designer__legend {
+  padding-inline: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.designer__pair {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.designer__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--danger-text);
+}
+
+.designer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+}
+
+// Destructive action sits away from the two safe ones, at the leading edge.
+.designer__delete {
+  margin-inline-end: auto;
+}

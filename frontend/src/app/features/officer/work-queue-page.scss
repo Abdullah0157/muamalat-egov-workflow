@@ -1,0 +1,65 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+// -----------------------------------------------------------------------------
+// Filter bar
+//
+// One auto fitting row of controls. The search box is given twice the share of
+// the row because a reference number is the thing an officer types most, and it
+// wraps onto its own line first on a narrow screen.
+// -----------------------------------------------------------------------------
+.queue__filters {
+  display: grid;
+  gap: var(--space-3) var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  align-items: end;
+}
+
+.queue__filter--search {
+  grid-column: span 2;
+}
+
+.queue__filter--clear {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@include m.down(m.$bp-md) {
+  .queue__filter--search,
+  .queue__filter--clear {
+    grid-column: 1 / -1;
+  }
+
+  .queue__filter--clear {
+    justify-content: flex-start;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Table furniture
+// -----------------------------------------------------------------------------
+.queue__summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+// The chip names the state, the countdown gives the size of it. Together they
+// are the only two things on the row that decide what gets worked on next.
+.queue__sla {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.queue__sla-countdown {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}

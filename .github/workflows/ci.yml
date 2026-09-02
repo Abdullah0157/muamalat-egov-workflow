@@ -1,0 +1,292 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  workflow_dispatch:
+
+# Read-only by default. Nothing here publishes an image or writes to the repository, so
+# nothing here needs write access.
+permissions:
+  contents: read
+
+# A new push to the same branch supersedes the run in progress. Never applied to the
+# default branch, where every commit's result is worth keeping.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  # Resolves to the latest 24.x. Angular 22 enforces a minimum of v24.15.0 and refuses to
+  # build on anything older, so a bare major is safer here than a pin that drifts behind it.
+  NODE_VERSION: "24"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # Cheap static checks. Runs in well under a minute and catches the mistakes that
+  # would otherwise waste ten minutes of build time in the jobs below.
+  # ---------------------------------------------------------------------------
+  config:
+    name: Config and infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose file parses and every referenced variable resolves
+        run: |
+          cp infra/.env.example infra/.env
+          docker compose -f infra/docker-compose.yml config --quiet
+          echo "docker-compose.yml OK"
+
+      - name: Keycloak realm export is valid JSON
+        run: |
+          python3 -m json.tool infra/keycloak/realm-muamalat.json > /dev/null
+          echo "realm-muamalat.json OK"
+
+      - name: Keycloak realm declares the four application roles
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          realm = json.load(open("infra/keycloak/realm-muamalat.json"))
+          names = {r["name"] for r in realm["roles"]["realm"]}
+          expected = {"Citizen", "Officer", "Supervisor", "Admin"}
+          missing = expected - names
+          if missing:
+              sys.exit(f"Realm is missing role(s): {sorted(missing)}")
+          clients = {c["clientId"] for c in realm["clients"]}
+          for c in ("muamalat-web", "muamalat-api"):
+              if c not in clients:
+                  sys.exit(f"Realm is missing client: {c}")
+          if not realm["users"]:
+              sys.exit("Realm declares no demo users")
+          print(f"{len(names)} roles, {len(clients)} clients, {len(realm['users'])} users")
+          PY
+
+      - name: Shell scripts are clean
+        run: shellcheck infra/web-entrypoint.sh
+
+  # ---------------------------------------------------------------------------
+  # Backend. Warnings are errors: an unused variable or a nullable violation that
+  # nobody fixes today is a nullable violation that nobody fixes ever.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend (.NET 10)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj', 'backend/**/Directory.Packages.props') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore backend/Muamalat.slnx
+
+      # NU1901-NU1904 are NuGet vulnerability advisories. They are kept as warnings rather
+      # than errors on purpose: an advisory published upstream overnight would otherwise
+      # turn every unrelated pull request red, which trains people to ignore the signal.
+      # Code warnings are errors.
+      - name: Build (warnings as errors)
+        run: >
+          dotnet build backend/Muamalat.slnx
+          --configuration Release
+          --no-restore
+          -warnaserror
+          -p:WarningsNotAsErrors="NU1901;NU1902;NU1903;NU1904"
+
+      # Integration tests use Testcontainers, which needs a working Docker daemon.
+      # ubuntu-latest runners ship one, so no service container or setup step is required.
+      - name: Verify Docker is available for Testcontainers
+        run: docker info --format 'Docker {{.ServerVersion}} on {{.OperatingSystem}}'
+
+      - name: Test
+        run: >
+          dotnet test backend/Muamalat.slnx
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=backend-tests.trx"
+          --logger "console;verbosity=normal"
+          --results-directory ${{ github.workspace }}/artifacts/test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: artifacts/test-results
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Frontend.
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend (Angular 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci, not npm install: the lockfile is the source of truth and a drifted
+      # package.json should fail the build rather than be silently reconciled.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Karma resolves ChromeHeadless through CHROME_BIN. Resolving it explicitly means a
+      # runner image that drops Chrome fails here with a clear message instead of inside
+      # the test runner.
+      - name: Locate Chrome
+        run: |
+          set -euo pipefail
+          bin="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium-browser || command -v chromium || true)"
+          if [ -z "$bin" ]; then
+            echo "::error::No Chrome or Chromium binary on this runner; ChromeHeadless tests cannot run."
+            exit 1
+          fi
+          echo "CHROME_BIN=$bin" >> "$GITHUB_ENV"
+          "$bin" --version
+
+      - name: Unit tests (ChromeHeadless)
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+  # ---------------------------------------------------------------------------
+  # Container images. Proves the Dockerfiles build from a clean checkout, and that
+  # the web image actually serves the bundle rather than merely compiling.
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Container images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/Dockerfile.api
+          push: false
+          load: true
+          tags: muamalat/api:ci
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/Dockerfile.web
+          push: false
+          load: true
+          tags: muamalat/web:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      # Both images must run as a non-root user. This is the check that catches a
+      # well-meaning "just add USER root to fix the permission error" commit.
+      - name: Images do not run as root
+        run: |
+          set -euo pipefail
+          for image in muamalat/api:ci muamalat/web:ci; do
+            user="$(docker image inspect "$image" --format '{{.Config.User}}')"
+            if [ -z "$user" ] || [ "$user" = "root" ] || [ "$user" = "0" ]; then
+              echo "::error::$image runs as root (Config.User='$user')"
+              exit 1
+            fi
+            echo "$image runs as '$user'"
+          done
+
+      # The API image cannot be smoke-tested in isolation because it needs PostgreSQL and
+      # Keycloak. The web image can: nginx plus the built bundle is self-contained.
+      - name: Smoke test the web image
+        run: |
+          set -euo pipefail
+          docker run -d --name web-smoke -p 8088:8080 muamalat/web:ci
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8088/healthz > /dev/null 2>&1; then ready=1; break; fi
+            sleep 2
+          done
+          docker logs web-smoke
+          if [ "$ready" != "1" ]; then
+            echo "::error::web image never became ready on /healthz"
+            docker rm -f web-smoke
+            exit 1
+          fi
+
+          echo "--- index.html is served ---"
+          curl -fsS -o /dev/null -w 'GET / -> %{http_code}\n' http://127.0.0.1:8088/
+
+          echo "--- SPA deep link falls back to index.html ---"
+          curl -fsS -o /dev/null -w 'GET /requests/abc/timeline -> %{http_code}\n' \
+            http://127.0.0.1:8088/requests/abc/timeline
+
+          echo "--- runtime config is published ---"
+          curl -fsS http://127.0.0.1:8088/config.json
+
+          echo "--- security headers are present ---"
+          headers="$(curl -fsS -D - -o /dev/null http://127.0.0.1:8088/)"
+          for header in "content-security-policy" "x-content-type-options" "x-frame-options" "referrer-policy"; do
+            if ! grep -qi "^$header:" <<< "$headers"; then
+              echo "::error::response is missing the $header header"
+              echo "$headers"
+              docker rm -f web-smoke
+              exit 1
+            fi
+          done
+          echo "all required security headers present"
+
+          docker rm -f web-smoke
+
+  # ---------------------------------------------------------------------------
+  # Single required status check for branch protection. Without this, adding a job
+  # means remembering to update the protection rule, and people forget.
+  # ---------------------------------------------------------------------------
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [config, backend, frontend, docker]
+    steps:
+      - name: Verify every job succeeded
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}; then
+            echo "::error::At least one CI job did not succeed."
+            exit 1
+          fi
+          echo "All CI jobs succeeded."

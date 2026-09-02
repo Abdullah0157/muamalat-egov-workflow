@@ -1,0 +1,112 @@
+# ---------------------------------------------------------------------------
+# Secrets and local environment
+# ---------------------------------------------------------------------------
+# infra/.env.example is the committed template; the real file never is.
+.env
+.env.*
+!.env.example
+!infra/.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+secrets/
+
+# ---------------------------------------------------------------------------
+# .NET
+# ---------------------------------------------------------------------------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+artifacts/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.dbmdl
+*.dll
+*.exe
+*.pdb
+*.cache
+project.lock.json
+project.fragment.lock.json
+.vs/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage.opencover.xml
+coverage.cobertura.xml
+[Cc]overlet*/
+BenchmarkDotNet.Artifacts/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# ---------------------------------------------------------------------------
+# Node / Angular
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/
+.npm/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+coverage/
+karma-results/
+__screenshots__/
+playwright-report/
+test-results/
+
+# ---------------------------------------------------------------------------
+# Local infrastructure state
+# ---------------------------------------------------------------------------
+# Named Docker volumes live in the Docker VM, not the working tree, so nothing here is
+# strictly required. These entries exist so that a developer who switches the compose
+# volumes to bind mounts (a common "let me look at the WAL" move) does not commit a
+# PostgreSQL data directory or a Keycloak H2 file by accident.
+infra/data/
+infra/volumes/
+infra/postgres-data/
+infra/keycloak-data/
+*.sqlite
+*.sqlite3
+*.db-journal
+docker-compose.override.yml
+
+# ---------------------------------------------------------------------------
+# IDE and editor
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+.history/
+
+# ---------------------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

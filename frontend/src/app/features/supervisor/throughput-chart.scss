@@ -1,0 +1,200 @@
+@use 'mixins' as m;
+
+:host {
+  // The plot height is a token multiple rather than a magic number, so the chart
+  // scales with the spacing system instead of drifting away from it.
+  --throughput-plot: calc(var(--space-20) * 2);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+
+// -----------------------------------------------------------------------------
+// Legend. Colour, word and shape, for the same reason as the workload chart.
+// -----------------------------------------------------------------------------
+.throughput__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.throughput__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.throughput__swatch {
+  flex: none;
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+}
+
+.throughput__swatch--submitted {
+  background-color: var(--chart-1);
+}
+
+.throughput__swatch--closed {
+  background-color: var(--chart-2);
+  border-radius: var(--radius-pill);
+}
+
+// -----------------------------------------------------------------------------
+// Plot: a fixed axis column beside a scrolling band of week groups.
+// -----------------------------------------------------------------------------
+.throughput__plot {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.throughput__axis {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  block-size: var(--throughput-plot);
+  font-size: var(--text-2xs);
+  color: var(--chart-axis);
+}
+
+.throughput__tick {
+  line-height: 1;
+}
+
+.throughput__scroll {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+// No gap between the groups. Each group draws its own pair of hairlines, and
+// with the columns touching those hairlines join into the two continuous rules
+// the chart needs. A gap here would break them into dashes, which reads as a
+// threshold rather than as a grid.
+.throughput__groups {
+  display: flex;
+  align-items: flex-end;
+}
+
+// Grows to fill a wide card and never shrinks below its basis, so the plot uses
+// the space it is given and scrolls rather than squeezing when there is none.
+// The cap matters: a short period on a wide screen would otherwise stretch five
+// weeks across the whole card and lose the pairing that the chart is about.
+.throughput__group {
+  flex: 1 0 calc(var(--space-16) + var(--space-4));
+  max-inline-size: calc(var(--space-16) + var(--space-12));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// The two hairlines are the whole grid: one at the peak, one at the baseline,
+// and both carry a tick. Intermediate lines would be decoration, because the
+// figures themselves are already listed in the table underneath.
+.throughput__bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--space-1);
+  block-size: var(--throughput-plot);
+  border-block: 1px solid var(--chart-grid);
+}
+
+.throughput__slot {
+  flex: 1 1 var(--space-4);
+  max-inline-size: var(--space-8);
+  display: flex;
+  align-items: flex-end;
+  block-size: 100%;
+}
+
+.throughput__bar {
+  display: block;
+  inline-size: 100%;
+  // A week with one case still has to be visible. A week with none renders no
+  // element at all, so an empty week is never drawn as a stub.
+  min-block-size: var(--space-1);
+  border-start-start-radius: var(--radius-xs);
+  border-start-end-radius: var(--radius-xs);
+}
+
+.throughput__bar--submitted {
+  background-color: var(--chart-1);
+}
+
+.throughput__bar--closed {
+  background-color: var(--chart-2);
+}
+
+// Padded rather than gapped, so the labels keep their distance from each other
+// without putting a gap between the columns and breaking the gridlines.
+.throughput__label {
+  padding-inline: var(--space-2);
+  font-size: var(--text-2xs);
+  line-height: var(--leading-snug);
+  color: var(--chart-axis);
+  text-align: center;
+}
+
+// -----------------------------------------------------------------------------
+// The accessible equivalent.
+// -----------------------------------------------------------------------------
+.throughput__table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+
+  &:focus-visible {
+    @include m.focus-ring;
+  }
+}
+
+.throughput__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+
+.throughput__table th,
+.throughput__table td {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-block-end: 1px solid var(--table-border);
+  text-align: start;
+  white-space: nowrap;
+}
+
+.throughput__table thead th {
+  background-color: var(--table-header-bg);
+  color: var(--text-secondary);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.throughput__table tbody th {
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.throughput__table tbody tr:last-child th,
+.throughput__table tbody tr:last-child td {
+  border-block-end: 0;
+}
+
+.throughput__numeric {
+  text-align: end;
+}

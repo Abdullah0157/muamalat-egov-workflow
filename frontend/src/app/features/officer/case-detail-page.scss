@@ -1,0 +1,195 @@
+@use 'mixins' as m;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+// -----------------------------------------------------------------------------
+// Layout
+//
+// The file reads down the main column and everything that changes it lives in
+// the rail. Grid columns follow the writing direction, so the rail sits on the
+// trailing edge in both English and Arabic without a direction specific rule.
+// Below the large breakpoint the rail stacks under the file, actions first,
+// because on a phone the officer is acting rather than reading.
+// -----------------------------------------------------------------------------
+.case__layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@include m.up(m.$bp-lg) {
+  .case__layout {
+    grid-template-columns: minmax(0, 1fr) 23rem;
+  }
+}
+
+@include m.down(m.$bp-lg) {
+  .case__rail {
+    order: -1;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Header meta
+// -----------------------------------------------------------------------------
+.case__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.case__sla {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.case__sla-countdown {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.case__confirm {
+  margin-block-start: var(--space-2);
+}
+
+// -----------------------------------------------------------------------------
+// Documents
+// -----------------------------------------------------------------------------
+.documents__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.documents__progress--complete {
+  color: var(--success-text);
+  font-weight: var(--weight-semibold);
+}
+
+.documents__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents__item {
+  display: grid;
+  gap: var(--space-2) var(--space-4);
+  align-items: start;
+  padding-block: var(--space-3);
+  border-block-start: 1px solid var(--border-subtle);
+  grid-template-areas:
+    'detail state'
+    'actions actions';
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.documents__item:first-child {
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+@include m.up(m.$bp-md) {
+  .documents__item {
+    grid-template-areas: 'detail state actions';
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+}
+
+.documents__detail {
+  grid-area: detail;
+  min-inline-size: 0;
+}
+
+.documents__state {
+  grid-area: state;
+}
+
+.documents__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  grid-area: actions;
+}
+
+.documents__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: var(--weight-medium);
+}
+
+.documents__required {
+  color: var(--text-tertiary);
+}
+
+.documents__file {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-1) 0 0;
+}
+
+.documents__note {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--danger-soft);
+  border-inline-start: 3px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+// -----------------------------------------------------------------------------
+// Action panel
+//
+// One block per transition: the button, the stage it leads to, and, where the
+// workflow will not accept it yet, the reason and the way to satisfy it.
+// -----------------------------------------------------------------------------
+.actions__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actions__item + .actions__item {
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.actions__target {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+}
+
+.actions__reason {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  color: var(--warning-text);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
