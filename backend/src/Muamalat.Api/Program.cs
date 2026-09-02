@@ -114,6 +114,7 @@ builder.Services.AddProblemDetails(options =>
 });
 
 builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<DemoDataSeeder>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
@@ -143,6 +144,15 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<DatabaseSeeder>().InitialiseAsync();
+
+    // A demonstration caseload, so the queue, the SLA indicators and the oversight
+    // dashboard have something real to show on a first run. Every case is created
+    // through the workflow engine, so the audit chains genuinely verify.
+    if (app.Configuration.GetValue("Demo:SeedCaseload", true))
+    {
+        await scope.ServiceProvider.GetRequiredService<DemoDataSeeder>()
+            .SeedAsync(TimeProvider.System.GetUtcNow());
+    }
 }
 
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -176,6 +186,7 @@ app.UseAuthorization();
 // database is briefly unreachable.
 app.MapWorkflowEndpoints();
 app.MapRequestEndpoints();
+app.MapDashboardEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {

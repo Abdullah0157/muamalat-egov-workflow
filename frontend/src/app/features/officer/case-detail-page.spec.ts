@@ -11,7 +11,7 @@ import {
   TransitionNotAllowedError,
 } from '../../core/data/data-gateway';
 import { WORKFLOW_KEYS } from '../../core/data/workflow-definitions';
-import { RequestDocument, ServiceRequest } from '../../core/models/domain';
+import { RequestDocument, ServiceRequest, WorkflowTransition } from '../../core/models/domain';
 import { all, el, maybeEl, text } from '../../shared/testing/dom';
 import { setupI18n, testProviders } from '../../shared/testing/i18n';
 import { CaseDetailPage } from './case-detail-page';
@@ -24,6 +24,11 @@ function notUsed(): Error {
 
 /** Records what the screen asked for, so the specs assert on the call rather than the mock. */
 class FakeGateway extends DataGateway {
+  /** The engine's answer is not under test here; screens drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
+  }
+
   record: ServiceRequest | null = null;
   failNext = false;
   neverResolves = false;

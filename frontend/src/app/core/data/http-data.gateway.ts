@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
+import { findWorkflow, registerWorkflows } from './workflow-definitions';
 import {
   CommentInput,
   DataGateway,
@@ -14,6 +15,7 @@ import {
 import { DashboardMetrics, DashboardPeriod } from './metrics';
 import {
   Department,
+  WorkflowTransition,
   HistoryEntry,
   RequestDraft,
   RequestStatus,
@@ -26,11 +28,13 @@ import {
 import {
   ApiAuditTrail,
   ApiRequestDetail,
+  ApiDashboard,
   ApiRequestSummary,
   ApiWorkflowDetail,
   ApiWorkflowSummary,
 } from './api.contracts';
 import {
+  toDashboard,
   toDepartments,
   toHistory,
   toServiceDefinitions,
@@ -84,7 +88,7 @@ export class HttpDataGateway extends DataGateway {
   // ---------------------------------------------------------------------
 
   async listRequestsForApplicant(applicantId: string): Promise<readonly ServiceRequest[]> {
-    const rows = await this.get<ApiRequestSummary[]>('/api/requests/mine');
+    const rows = await this.get<ApiRequestSummary[]>('/requests/mine');
 
     // The endpoint is already scoped to the authenticated caller by the API.
     // Filtering again here is defence in depth: if the token and the requested
@@ -104,7 +108,7 @@ export class HttpDataGateway extends DataGateway {
       params = params.set('department', query.departmentId);
     }
 
-    const rows = await this.get<ApiRequestSummary[]>('/api/requests/queue', params);
+    const rows = await this.get<ApiRequestSummary[]>('/requests/queue', params);
     const mapped = rows.map(toServiceRequestFromSummary);
 
     // Search, service and SLA narrowing happen client side against the current
@@ -135,25 +139,45 @@ export class HttpDataGateway extends DataGateway {
   }
 
   async getRequest(idOrReference: string): Promise<ServiceRequest | null> {
-    const detail = await this.getOrNull<ApiRequestDetail>(
-      `/api/requests/${encodeURIComponent(idOrReference)}`,
-    );
+    // Deep links in the interface carry the reference number, because that is what a
+    // citizen has in front of them. The API exposes both, so the right path is chosen
+    // rather than making every caller know which kind of key it is holding.
+    const path = isUuid(idOrReference)
+      ? `/requests/${encodeURIComponent(idOrReference)}`
+      : `/requests/by-reference/${encodeURIComponent(idOrReference)}`;
+
+    const detail = await this.getOrNull<ApiRequestDetail>(path);
 
     if (!detail) {
       return null;
     }
 
+    // A case can be opened directly from a deep link, before any screen has had
+    // reason to list the catalogue. The definition it is pinned to is fetched on
+    // demand, otherwise the officer would see a case with no available actions
+    // and no stage names, which looks like a permissions problem rather than a
+    // missing fetch.
+    if (!findWorkflow(detail.workflowKey)) {
+      const definition = await this.getOrNull<ApiWorkflowDetail>(
+        `/workflows/${encodeURIComponent(detail.workflowKey)}/versions/${detail.workflowVersion}`,
+      );
+
+      if (definition) {
+        registerWorkflows([toWorkflowDefinition(definition)]);
+      }
+    }
+
     // History is a separate resource because it carries the chain verification
     // result alongside the entries, and most screens do not need it.
     const audit = await this.getOrNull<ApiAuditTrail>(
-      `/api/requests/${encodeURIComponent(detail.id)}/audit`,
+      `/requests/${encodeURIComponent(detail.id)}/audit`,
     );
 
     return toServiceRequest(detail, audit ? toHistory(audit) : []);
   }
 
   async submitRequest(draft: RequestDraft, _applicant: User): Promise<ServiceRequest> {
-    const detail = await this.post<ApiRequestDetail>('/api/requests', {
+    const detail = await this.post<ApiRequestDetail>('/requests', {
       workflowKey: draft.serviceId,
       serviceType: null,
     });
@@ -163,7 +187,7 @@ export class HttpDataGateway extends DataGateway {
 
   async applyTransition(input: TransitionInput): Promise<ServiceRequest> {
     const detail = await this.post<ApiRequestDetail>(
-      `/api/requests/${encodeURIComponent(input.requestId)}/transitions/${encodeURIComponent(input.transitionKey)}`,
+      `/requests/${encodeURIComponent(input.requestId)}/transitions/${encodeURIComponent(input.transitionKey)}`,
       { comment: input.comment },
     );
 
@@ -176,10 +200,23 @@ export class HttpDataGateway extends DataGateway {
    * are enforced in exactly one place, and a UI that is out of date cannot
    * offer an action that the engine will refuse.
    */
-  async listAvailableTransitions(requestId: string): Promise<readonly AvailableTransition[]> {
-    return this.get<AvailableTransition[]>(
-      `/api/requests/${encodeURIComponent(requestId)}/transitions`,
+  async listAvailableTransitions(requestId: string): Promise<readonly WorkflowTransition[]> {
+    const request = await this.getRequest(requestId);
+    if (!request) return [];
+
+    const offered = await this.get<AvailableTransition[]>(
+      `/requests/${encodeURIComponent(request.id)}/transitions`,
     );
+
+    // The engine names the transitions it will accept; the definition supplies the
+    // rest of each one (guards, target, roles) for display.
+    const version = findWorkflow(request.workflowKey)?.versions.find(
+      (v) => v.status === 'published',
+    );
+
+    const offeredCodes = new Set(offered.map((t) => t.code));
+
+    return (version?.transitions ?? []).filter((t) => offeredCodes.has(t.key));
   }
 
   // ---------------------------------------------------------------------
@@ -187,17 +224,26 @@ export class HttpDataGateway extends DataGateway {
   // ---------------------------------------------------------------------
 
   async listWorkflows(): Promise<readonly WorkflowDefinition[]> {
-    const summaries = await this.get<ApiWorkflowSummary[]>('/api/workflows');
+    const summaries = await this.get<ApiWorkflowSummary[]>('/workflows');
 
     const details = await Promise.all(
       summaries.map((summary) =>
         this.getOrNull<ApiWorkflowDetail>(
-          `/api/workflows/${encodeURIComponent(summary.key)}/versions/${summary.version}`,
+          `/workflows/${encodeURIComponent(summary.key)}/versions/${summary.version}`,
         ),
       ),
     );
 
-    return details.filter((detail): detail is ApiWorkflowDetail => detail !== null).map(toWorkflowDefinition);
+    const definitions = details
+      .filter((detail): detail is ApiWorkflowDetail => detail !== null)
+      .map(toWorkflowDefinition);
+
+    // Registered so the presentation helpers can resolve state names, stages and
+    // the transitions an officer may take. They reason about the definition a
+    // request is pinned to, which only the server can supply.
+    registerWorkflows(definitions);
+
+    return definitions;
   }
 
   async getWorkflow(workflowId: string): Promise<WorkflowDefinition | null> {
@@ -229,8 +275,34 @@ export class HttpDataGateway extends DataGateway {
     throw new ApiCapabilityError('running case counts');
   }
 
-  async getDashboard(_period: DashboardPeriod): Promise<DashboardMetrics> {
-    throw new ApiCapabilityError('supervisor dashboard metrics');
+  async getDashboard(period: DashboardPeriod): Promise<DashboardMetrics> {
+    const api = await this.get<ApiDashboard>(
+      '/dashboard',
+      new HttpParams().set('period', period),
+    );
+
+    const metrics = toDashboard(api, period);
+
+    // The cases needing attention are the breached ones the dashboard already
+    // named. Resolved against the queue so the supervisor gets full request rows
+    // to open, rather than the dashboard inventing a second shape for the same
+    // records.
+    const queue = await this.listQueue({
+      officerId: '',
+
+      // No department filter: a supervisor oversees every department, so the
+      // breached cases must be resolved across all of them.
+      departmentId: null,
+      assignment: 'department',
+      search: '',
+      serviceId: null,
+      priority: null,
+      slaStatus: null,
+    });
+
+    const escalatedIds = new Set(metrics.escalatedCases.map((c) => c.requestId));
+
+    return { ...metrics, attentionCases: queue.rows.filter((r) => escalatedIds.has(r.id)) };
   }
 
   // ---------------------------------------------------------------------
@@ -300,6 +372,10 @@ export class ApiCapabilityError extends Error {
     super(`The API does not support ${capability} yet.`);
     this.name = 'ApiCapabilityError';
   }
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 function isNotFound(error: unknown): boolean {

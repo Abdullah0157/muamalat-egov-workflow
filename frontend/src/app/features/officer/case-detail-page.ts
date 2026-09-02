@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   resource,
@@ -53,6 +54,7 @@ import {
   buildHistoryItems,
   availableTransitions,
   serviceFor,
+  serviceNameOf,
   stateName,
   stateNameByKey,
   versionFor,
@@ -593,7 +595,7 @@ export class CaseDetailPage {
 
   protected readonly serviceName = computed(() => {
     const file = this.caseFile();
-    return file === null ? '' : this.i18n.pick(serviceFor(file)?.name);
+    return file === null ? '' : serviceNameOf(file, this.i18n);
   });
 
   protected readonly applicantCivilId = computed(() => {
@@ -696,6 +698,36 @@ export class CaseDetailPage {
    * What the published workflow allows this role to do from here, with the
    * reason attached wherever the action is not yet applicable.
    */
+  /**
+   * Transitions the engine will accept, refreshed whenever the case changes.
+   * Falls back to local derivation when the gateway cannot answer, so the
+   * fixture driven build still shows actions.
+   */
+  private readonly offered = signal<readonly WorkflowTransition[]>([]);
+
+  private readonly refreshOffered = effect(() => {
+    const file = this.caseFile();
+    if (file === null) {
+      this.offered.set([]);
+      return;
+    }
+
+    void this.gateway
+      .listAvailableTransitions(file.id)
+      .then((transitions) => this.offered.set(transitions))
+      // A failure here must not blank the panel: the computed falls back to
+      // local derivation, which is better than showing an officer nothing.
+      .catch(() => this.offered.set([]));
+  });
+
+  protected readonly offeredTransitions = computed<readonly WorkflowTransition[]>(() => {
+    const fromServer = this.offered();
+    if (fromServer.length > 0) return fromServer;
+
+    const file = this.caseFile();
+    return file === null ? [] : availableTransitions(file, this.auth.role());
+  });
+
   protected readonly actions = computed<readonly TransitionAction[]>(() => {
     const file = this.caseFile();
     if (file === null) {
@@ -705,7 +737,11 @@ export class CaseDetailPage {
     const hasComment = this.commentText().trim() !== '';
     const documentsVerified = this.documentsComplete();
 
-    return availableTransitions(file, this.auth.role()).map((transition) => {
+    // Offered by the engine, not derived here. The workflow rules live on the
+    // server, and a second copy in the browser drifts the moment a definition is
+    // edited: the officer would be shown actions the engine refuses, or none at
+    // all when this build has never seen the version the case is pinned to.
+    return this.offeredTransitions().map((transition) => {
       const presentation = transitionPresentation(transition.kind);
       let blockedReason: string | null = null;
       if (transition.guard === DOCUMENTS_GUARD && !documentsVerified) {

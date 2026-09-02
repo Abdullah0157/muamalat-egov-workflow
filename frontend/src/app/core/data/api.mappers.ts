@@ -1,11 +1,13 @@
 import {
   ApiAuditTrail,
+  ApiDashboard,
   ApiRequestDetail,
   ApiRequestSummary,
   ApiWorkflowDetail,
   ApiWorkflowState,
   ApiWorkflowTransition,
 } from './api.contracts';
+import { DashboardMetrics, DashboardPeriod } from './metrics';
 import {
   Department,
   HistoryAction,
@@ -49,6 +51,8 @@ export function toServiceRequest(
     workflowKey: detail.workflowKey,
     workflowVersion: detail.workflowVersion,
     currentStateKey: detail.currentStateCode,
+    serviceName: { en: detail.serviceNameEn, ar: detail.serviceNameAr },
+    currentStateName: { en: detail.currentStateNameEn, ar: detail.currentStateNameAr },
     status: toStatus(detail.currentStateCode, detail.isClosed),
 
     // The API has no priority concept: every request is worked in SLA order,
@@ -93,6 +97,8 @@ export function toServiceRequestFromSummary(row: ApiRequestSummary): ServiceRequ
     workflowVersion: 0,
 
     currentStateKey: row.currentStateCode,
+    serviceName: { en: row.serviceNameEn, ar: row.serviceNameAr },
+    currentStateName: { en: row.currentStateNameEn, ar: row.currentStateNameAr },
     status: toStatus(row.currentStateCode, row.closedAt !== null),
     priority: 'normal',
     createdAt: row.submittedAt,
@@ -400,4 +406,63 @@ function sameInBothLanguages(value: string): LocalizedText {
   // Personal names and department codes are not translated; showing the same
   // value in both languages is correct rather than a missing translation.
   return { en: value, ar: value };
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard
+// ---------------------------------------------------------------------------
+
+export function toDashboard(api: ApiDashboard, period: DashboardPeriod): DashboardMetrics {
+  return {
+    period,
+    from: api.from,
+    to: api.to,
+    totalInPeriod: api.totalInPeriod,
+    open: api.open,
+    closed: api.closed,
+    atRisk: api.atRisk,
+    breached: api.breached,
+
+    // Null rather than zero when nothing closed in the period. Zero would read
+    // as "instant", which is the opposite of the truth.
+    averageProcessingMs: api.averageProcessingMs,
+
+    // The server reports null because the SLA that applied when a case closed
+    // is not recoverable from its current state. Passed through rather than
+    // approximated: an invented service level figure is worse than none.
+    onTimeRate: api.onTimeRate,
+
+    escalations: api.escalations,
+    workload: api.workload.map((w) => ({
+      departmentId: w.department,
+      name: sameInBothLanguages(w.department),
+      open: w.open,
+      onTrack: w.onTrack,
+      atRisk: w.atRisk,
+      breached: w.breached,
+    })),
+    bottlenecks: api.bottlenecks.map((b) => ({
+      stateKey: b.stateCode,
+      name: { en: b.nameEn, ar: b.nameAr },
+      averageMs: b.averageMs,
+      caseCount: b.caseCount,
+    })),
+    throughput: api.throughput.map((t) => ({
+      weekStart: t.weekStart,
+      submitted: t.submitted,
+      closed: t.closed,
+    })),
+    escalatedCases: api.escalatedCases.map((e) => ({
+      requestId: e.requestId,
+      reference: e.reference,
+      serviceName: sameInBothLanguages(e.workflowKey),
+      departmentName: sameInBothLanguages(e.department),
+      raisedAt: e.raisedAt,
+      ageMs: e.ageMs,
+    })),
+
+    // Populated by the gateway from the queue, so the supervisor can open the
+    // cases that need attention without a second round trip shape.
+    attentionCases: [],
+  };
 }

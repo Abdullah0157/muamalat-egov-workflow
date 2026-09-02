@@ -9,6 +9,16 @@ import { InjectionToken } from '@angular/core';
  */
 export interface RuntimeConfig {
   readonly apiBaseUrl: string;
+
+  /**
+   * Serve the interface from the in-memory dataset instead of the API.
+   *
+   * Off by default, so a deployment always talks to the real system and an
+   * omitted field can never silently turn a government service into a demo.
+   * Only a build that deliberately publishes `useMockData: true` runs on
+   * fixtures.
+   */
+  readonly useMockData?: boolean;
   readonly keycloak: {
     readonly url: string;
     readonly realm: string;
@@ -24,7 +34,10 @@ export const RUNTIME_CONFIG = new InjectionToken<RuntimeConfig>('RUNTIME_CONFIG'
  * so a developer running the API locally needs no extra setup.
  */
 export const DEV_RUNTIME_CONFIG: RuntimeConfig = {
-  apiBaseUrl: '',
+  // Same relative prefix the web container publishes, so `ng serve` with a
+  // proxy behaves identically to the deployed stack.
+  apiBaseUrl: '/api',
+  useMockData: false,
   keycloak: {
     url: 'http://localhost:8081',
     realm: 'muamalat',
@@ -54,6 +67,7 @@ export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
     // deep inside the sign in redirect.
     return {
       apiBaseUrl: parsed.apiBaseUrl ?? DEV_RUNTIME_CONFIG.apiBaseUrl,
+      useMockData: parsed.useMockData === true,
       keycloak: {
         url: parsed.keycloak?.url ?? DEV_RUNTIME_CONFIG.keycloak.url,
         realm: parsed.keycloak?.realm ?? DEV_RUNTIME_CONFIG.keycloak.realm,

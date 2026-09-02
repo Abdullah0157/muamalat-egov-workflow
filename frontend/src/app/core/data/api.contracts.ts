@@ -30,6 +30,10 @@ export interface ApiRequestSummary {
   readonly referenceNumber: string;
   readonly serviceType: string;
   readonly workflowKey: string;
+  readonly serviceNameEn: string;
+  readonly serviceNameAr: string;
+  readonly currentStateNameEn: string;
+  readonly currentStateNameAr: string;
   readonly applicantUserId: string;
   readonly applicantDisplayName: string;
   readonly currentStateCode: string;
@@ -46,6 +50,8 @@ export interface ApiRequestDetail {
   readonly serviceType: string;
   readonly workflowKey: string;
   readonly workflowVersion: number;
+  readonly serviceNameEn: string;
+  readonly serviceNameAr: string;
   readonly applicantUserId: string;
   readonly applicantDisplayName: string;
   readonly currentStateCode: string;
@@ -133,4 +139,41 @@ export interface ApiWorkflowDetail {
   readonly createdAt: string;
   readonly states: readonly ApiWorkflowState[];
   readonly transitions: readonly ApiWorkflowTransition[];
+}
+
+export interface ApiDashboard {
+  readonly period: string;
+  readonly from: string | null;
+  readonly to: string;
+  readonly totalInPeriod: number;
+  readonly open: number;
+  readonly closed: number;
+  readonly atRisk: number;
+  readonly breached: number;
+  readonly averageProcessingMs: number | null;
+  readonly onTimeRate: number | null;
+  readonly escalations: number;
+  readonly workload: readonly {
+    department: string;
+    open: number;
+    onTrack: number;
+    atRisk: number;
+    breached: number;
+  }[];
+  readonly bottlenecks: readonly {
+    stateCode: string;
+    nameEn: string;
+    nameAr: string;
+    averageMs: number;
+    caseCount: number;
+  }[];
+  readonly throughput: readonly { weekStart: string; submitted: number; closed: number }[];
+  readonly escalatedCases: readonly {
+    requestId: string;
+    reference: string;
+    workflowKey: string;
+    department: string;
+    raisedAt: string;
+    ageMs: number;
+  }[];
 }

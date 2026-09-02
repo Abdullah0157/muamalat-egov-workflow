@@ -227,9 +227,25 @@ export function waitingOnRole(request: ServiceRequest): Role | null {
 }
 
 export function stateName(request: ServiceRequest, i18n: I18nService): string {
+  // The server resolves the name against the definition the request is actually
+  // pinned to, which the local catalogue cannot do for a workflow version it has
+  // never seen. Prefer it, and fall back for fixture data.
+  if (request.currentStateName) {
+    return i18n.pick(request.currentStateName);
+  }
+
   const version = versionFor(request);
   const state = version?.states.find((candidate) => candidate.key === request.currentStateKey);
   return state ? i18n.pick(state.name) : request.currentStateKey;
+}
+
+/** Service name for display, preferring what the server resolved. */
+export function serviceNameOf(request: ServiceRequest, i18n: I18nService): string {
+  if (request.serviceName) {
+    return i18n.pick(request.serviceName);
+  }
+
+  return i18n.pick(serviceFor(request)?.name);
 }
 
 export function stateNameByKey(

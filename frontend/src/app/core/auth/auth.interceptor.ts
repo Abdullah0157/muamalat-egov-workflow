@@ -32,7 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   // Only same-origin API calls are decorated. Sending a bearer token to any URL
   // the app happens to fetch would leak the credential to third parties.
-  const isApiCall = request.url.startsWith('/api/') || request.url.includes('/api/');
+  const isApiCall = request.url.startsWith('/api/');
 
   if (!isApiCall) {
     return next(request);

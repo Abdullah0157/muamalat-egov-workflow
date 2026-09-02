@@ -11,6 +11,7 @@ import {
   ServiceRequest,
   User,
   WorkflowDefinition,
+  WorkflowTransition,
   WorkflowVersion,
 } from '../models/domain';
 import {
@@ -29,12 +30,7 @@ import { DemoSettingsService } from './demo-settings.service';
 import { DashboardMetrics, DashboardPeriod, computeDashboard } from './metrics';
 import { DEPARTMENTS, SERVICES, findDepartment, findService } from './service-catalogue';
 import { addHours, isOpen, slaStateFor } from './sla';
-import {
-  WORKFLOW_DEFINITIONS,
-  findVersion,
-  findWorkflow,
-  publishedVersion,
-} from './workflow-definitions';
+import { WORKFLOW_DEFINITIONS, findVersion, findWorkflow, outgoingTransitions, publishedVersion } from './workflow-definitions';
 
 /**
  * In-memory implementation of the data gateway.
@@ -187,6 +183,21 @@ export class MockDataGateway extends DataGateway {
       this.requests.update((current) => [request, ...current]);
       return request;
     });
+  }
+
+  /**
+   * Mirrors what the engine would allow, derived from the fixture definitions.
+   * The live gateway asks the server instead; this exists so the fixture driven
+   * build and the component tests behave the same way.
+   */
+  async listAvailableTransitions(requestId: string): Promise<readonly WorkflowTransition[]> {
+    const request = await this.getRequest(requestId);
+    if (!request || request.closedAt !== null) {
+      return [];
+    }
+
+    const version = findVersion(request.workflowKey, request.workflowVersion);
+    return version ? outgoingTransitions(version, request.currentStateKey) : [];
   }
 
   async applyTransition(input: TransitionInput): Promise<ServiceRequest> {
@@ -512,4 +523,5 @@ function assigneeFor(role: Role | null, request: ServiceRequest, actor: User): s
     default:
       return null;
   }
+
 }

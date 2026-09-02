@@ -1,15 +1,17 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken, inject } from '@angular/core';
+
+import { RUNTIME_CONFIG } from '../config/runtime-config';
 
 /**
- * Base URL of the Muamalat API.
+ * Prefix applied to every API path.
  *
- * Empty by default, which makes every call same origin (`/api/...`). In the
- * deployed stack nginx proxies `/api` to the API container, so the browser
- * never learns the API's real address and there is no cross origin request to
- * configure. A value is only supplied when the two are genuinely on different
- * origins, such as a developer running `ng serve` against a container.
+ * Carries the `/api` segment itself, so gateway paths are written as
+ * `/requests/mine` rather than repeating the prefix at each call site. In the
+ * deployed stack this is the relative value `/api`, which nginx proxies to the
+ * API container: the browser never learns the API's real address and there is
+ * no cross origin request to configure.
  */
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   providedIn: 'root',
-  factory: () => '',
+  factory: () => inject(RUNTIME_CONFIG, { optional: true })?.apiBaseUrl ?? '/api',
 });

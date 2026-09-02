@@ -1,10 +1,11 @@
-import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
+import { EnvironmentProviders, inject, makeEnvironmentProviders } from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
 import { DataGateway } from './data-gateway';
 import { HttpDataGateway } from './http-data.gateway';
 import { MockDataGateway } from './mock-data.gateway';
 import { authInterceptor } from '../auth/auth.interceptor';
+import { RUNTIME_CONFIG } from '../config/runtime-config';
 
 /**
  * How the application gets its data.
@@ -27,13 +28,23 @@ export interface DataOptions {
 }
 
 export function provideData(options: DataOptions = {}): EnvironmentProviders {
-  const gateway = options.useMockData ? MockDataGateway : HttpDataGateway;
-
   return makeEnvironmentProviders([
     // withFetch uses the browser's fetch rather than XHR, which is what makes
     // request cancellation actually propagate when a user navigates away from a
     // slow screen.
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
-    { provide: DataGateway, useClass: gateway },
+    {
+      // Decided at runtime from the published configuration rather than at
+      // build time, so one image serves both the live system and the fixture
+      // driven demo. An explicit option still wins, which is what tests use.
+      provide: DataGateway,
+      useFactory: () => {
+        const config = inject(RUNTIME_CONFIG, { optional: true });
+        const useMock = options.useMockData ?? config?.useMockData ?? false;
+        return useMock ? inject(MockDataGateway) : inject(HttpDataGateway);
+      },
+    },
+    MockDataGateway,
+    HttpDataGateway,
   ]);
 }

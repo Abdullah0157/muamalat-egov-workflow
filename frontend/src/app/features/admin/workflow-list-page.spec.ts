@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { DataGateway, ServiceUnavailableError } from '../../core/data/data-gateway';
 import { WORKFLOW_DEFINITIONS } from '../../core/data/workflow-definitions';
-import { WorkflowDefinition } from '../../core/models/domain';
+import { WorkflowDefinition, WorkflowTransition } from '../../core/models/domain';
 import { all, el, maybeEl, text } from '../../shared/testing/dom';
 import { setupI18n, testProviders } from '../../shared/testing/i18n';
 import { WorkflowListPage } from './workflow-list-page';
@@ -13,6 +13,11 @@ import { WorkflowListPage } from './workflow-list-page';
  * other screens and a fake that implemented it would just be noise to maintain.
  */
 class FakeGateway {
+  /** The engine's answer is not under test here; screens drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
+  }
+
   definitions: readonly WorkflowDefinition[] = WORKFLOW_DEFINITIONS;
   runningCases = 7;
   listCalls = 0;

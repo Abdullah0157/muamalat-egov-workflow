@@ -62,6 +62,11 @@ public sealed class MuamalatApiFactory : WebApplicationFactory<Program>, IAsyncL
         // assertions about SLA events. Tests drive the procedure explicitly instead.
         builder.UseSetting("SlaSweep:Enabled", "false");
 
+        // Tests own their data. The demonstration caseload exists so a first run of the
+        // real stack has something to show, but inside a test it would bury the rows a
+        // test just created and make assertions depend on seed volume.
+        builder.UseSetting("Demo:SeedCaseload", "false");
+
         builder.UseSetting("Authentication:Authority", "http://localhost/realms/test");
         builder.UseSetting("Authentication:Audience", "muamalat-api");
         builder.UseSetting("Authentication:AllowHttpMetadata", "true");

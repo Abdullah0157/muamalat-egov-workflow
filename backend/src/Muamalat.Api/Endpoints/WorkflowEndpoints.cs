@@ -15,9 +15,14 @@ public static class WorkflowEndpoints
 {
     public static IEndpointRouteBuilder MapWorkflowEndpoints(this IEndpointRouteBuilder app)
     {
+        // Readable by any signed in user. A citizen cannot choose a service, see
+        // what a service is called, or follow their own progress tracker without
+        // the definition, so gating reads behind an officer role locks citizens
+        // out of the service catalogue entirely. Nothing here is sensitive: it is
+        // the published description of a public government service.
         var group = app.MapGroup("/api/workflows")
             .WithTags("Workflows")
-            .RequireAuthorization(Policies.Officer);
+            .RequireAuthorization();
 
         group.MapGet("/", ListAsync)
             .WithSummary("List workflow definitions")
@@ -178,6 +183,13 @@ internal static class Problems
     {
         Title = "Workflow definition not found",
         Detail = $"No version {version} exists for workflow '{key}'.",
+        Status = StatusCodes.Status404NotFound
+    };
+
+    public static ProblemDetails ReferenceNotFound(string reference) => new()
+    {
+        Title = "Service request not found",
+        Detail = $"No service request exists with reference '{reference}'.",
         Status = StatusCodes.Status404NotFound
     };
 

@@ -18,6 +18,11 @@ import { WorkflowDesignerPage } from './workflow-designer-page';
 const STANDARD = WORKFLOW_DEFINITIONS[0];
 
 class FakeGateway {
+  /** The engine's answer is not under test here; screens drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
+  }
+
   definition: WorkflowDefinition | null = STANDARD;
   runningCases = 12;
   saved: WorkflowVersion | null = null;

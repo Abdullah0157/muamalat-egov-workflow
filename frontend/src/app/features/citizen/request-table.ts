@@ -14,7 +14,7 @@ import {
   requestStatusPresentation,
   slaPresentation,
 } from '../../shared/ui/status/status-presentation';
-import { serviceFor } from '../shared/request-presentation';
+import { serviceNameOf } from '../shared/request-presentation';
 
 /**
  * The citizen's list of requests, as a table.
@@ -128,8 +128,11 @@ export class CitizenRequestTable {
   protected readonly rowLink = (row: ServiceRequest): unknown[] => ['/citizen', row.reference];
 
   protected serviceName(row: ServiceRequest): string {
-    const service = serviceFor(row);
-    return service ? this.i18n.pick(service.name) : this.i18n.t('common.notAvailable');
+    // Prefer the name the server resolved against the definition this request is
+    // pinned to. The local catalogue only knows the versions it shipped with, so
+    // it cannot name a service whose workflow was edited after this build.
+    const name = serviceNameOf(row, this.i18n);
+    return name || this.i18n.t('common.notAvailable');
   }
 
   /** Falls back to creation for a draft, which has been filed with nobody yet. */

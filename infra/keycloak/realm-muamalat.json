@@ -14,7 +14,10 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "internationalizationEnabled": true,
-  "supportedLocales": ["en", "ar"],
+  "supportedLocales": [
+    "en",
+    "ar"
+  ],
   "defaultLocale": "en",
   "accessTokenLifespan": 300,
   "accessCodeLifespan": 60,
@@ -30,7 +33,6 @@
   "maxFailureWaitSeconds": 900,
   "maxDeltaTimeSeconds": 43200,
   "passwordPolicy": "length(10) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername(undefined)",
-
   "roles": {
     "realm": [
       {
@@ -52,7 +54,9 @@
         "description": "Everything an Officer can do, plus approve, reject, reassign and escalate. Composite of Officer, because a supervisor who cannot do the work they supervise is an artificial restriction that ends in shared logins.",
         "composite": true,
         "composites": {
-          "realm": ["Officer"]
+          "realm": [
+            "Officer"
+          ]
         },
         "clientRole": false,
         "containerId": "muamalat"
@@ -66,7 +70,6 @@
       }
     ]
   },
-
   "clients": [
     {
       "clientId": "muamalat-web",
@@ -177,7 +180,6 @@
       "optionalClientScopes": []
     }
   ],
-
   "users": [
     {
       "username": "fatima.alsuwaidi",
@@ -187,9 +189,16 @@
       "lastName": "Al Suwaidi",
       "email": "fatima.alsuwaidi@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Citizen#2026", "temporary": false }
+        {
+          "type": "password",
+          "value": "Citizen#2026",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Citizen"]
+      "realmRoles": [
+        "Citizen"
+      ],
+      "id": "11111111-0000-4000-8000-000000000001"
     },
     {
       "username": "omar.alharthy",
@@ -199,9 +208,16 @@
       "lastName": "Al Harthy",
       "email": "omar.alharthy@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Citizen#2026", "temporary": false }
+        {
+          "type": "password",
+          "value": "Citizen#2026",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Citizen"]
+      "realmRoles": [
+        "Citizen"
+      ],
+      "id": "11111111-0000-4000-8000-000000000002"
     },
     {
       "username": "noura.alkaabi",
@@ -211,9 +227,16 @@
       "lastName": "Al Kaabi",
       "email": "noura.alkaabi@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Officer#2026", "temporary": false }
+        {
+          "type": "password",
+          "value": "Officer#2026",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Officer"]
+      "realmRoles": [
+        "Officer"
+      ],
+      "id": "11111111-0000-4000-8000-000000000003"
     },
     {
       "username": "yousef.almazrouei",
@@ -223,9 +246,16 @@
       "lastName": "Al Mazrouei",
       "email": "yousef.almazrouei@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Officer#2026", "temporary": false }
+        {
+          "type": "password",
+          "value": "Officer#2026",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Officer"]
+      "realmRoles": [
+        "Officer"
+      ],
+      "id": "11111111-0000-4000-8000-000000000004"
     },
     {
       "username": "mariam.albalushi",
@@ -235,9 +265,16 @@
       "lastName": "Al Balushi",
       "email": "mariam.albalushi@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Supervisor#2026", "temporary": false }
+        {
+          "type": "password",
+          "value": "Supervisor#2026",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Supervisor"]
+      "realmRoles": [
+        "Supervisor"
+      ],
+      "id": "11111111-0000-4000-8000-000000000005"
     },
     {
       "username": "khalid.alnuaimi",
@@ -247,9 +284,16 @@
       "lastName": "Al Nuaimi",
       "email": "khalid.alnuaimi@muamalat.example",
       "credentials": [
-        { "type": "password", "value": "Admin#2026!", "temporary": false }
+        {
+          "type": "password",
+          "value": "Admin#2026!",
+          "temporary": false
+        }
       ],
-      "realmRoles": ["Admin"]
+      "realmRoles": [
+        "Admin"
+      ],
+      "id": "11111111-0000-4000-8000-000000000006"
     }
   ]
 }

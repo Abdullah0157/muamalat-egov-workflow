@@ -701,12 +701,40 @@ export function publishedVersion(definition: WorkflowDefinition): WorkflowVersio
   return published ?? definition.versions[definition.versions.length - 1];
 }
 
+/**
+ * Workflow definitions currently in play.
+ *
+ * The fixtures below are the starting point, so the interface works with no
+ * backend. When the app runs against the API, the definitions it fetches are
+ * registered here instead: they describe workflow versions this build has never
+ * seen, and without them an officer would be offered no actions at all, because
+ * the transitions available on a case come from its definition rather than from
+ * a hardcoded list.
+ */
+const registry = new Map<string, WorkflowDefinition>(
+  WORKFLOW_DEFINITIONS.map((definition) => [definition.key, definition]),
+);
+
+/** Replaces what is known about a workflow with the authoritative server copy. */
+export function registerWorkflows(definitions: readonly WorkflowDefinition[]): void {
+  for (const definition of definitions) {
+    registry.set(definition.key, definition);
+  }
+}
+
 export function findWorkflow(key: string): WorkflowDefinition | undefined {
-  return WORKFLOW_DEFINITIONS.find((definition) => definition.key === key);
+  return registry.get(key);
 }
 
 export function findVersion(key: string, version: number): WorkflowVersion | undefined {
-  return findWorkflow(key)?.versions.find((candidate) => candidate.version === version);
+  const workflow = findWorkflow(key);
+  if (!workflow) return undefined;
+
+  return (
+    workflow.versions.find((candidate) => candidate.version === version) ??
+    workflow.versions.find((candidate) => candidate.status === 'published') ??
+    workflow.versions[workflow.versions.length - 1]
+  );
 }
 
 export function findState(

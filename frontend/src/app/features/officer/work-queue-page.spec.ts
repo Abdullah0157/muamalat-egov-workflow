@@ -11,7 +11,7 @@ import {
 } from '../../core/data/data-gateway';
 import { SERVICES } from '../../core/data/service-catalogue';
 import { WORKFLOW_KEYS } from '../../core/data/workflow-definitions';
-import { ServiceDefinition, ServiceRequest } from '../../core/models/domain';
+import { ServiceDefinition, ServiceRequest, WorkflowTransition } from '../../core/models/domain';
 import { all, el, maybeEl, text } from '../../shared/testing/dom';
 import { setupI18n, testProviders } from '../../shared/testing/i18n';
 import { WorkQueuePage } from './work-queue-page';
@@ -22,6 +22,11 @@ function notUsed(): Error {
 
 /** Only the two reads the queue makes are real; the rest fail loudly. */
 class FakeGateway extends DataGateway {
+  /** The engine's answer is not under test here; screens drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
+  }
+
   readonly queries: QueueQuery[] = [];
   result: QueueResult = { rows: [], total: 0 };
   failNext = false;

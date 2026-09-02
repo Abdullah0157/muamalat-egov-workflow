@@ -234,6 +234,16 @@ export interface ServiceRequest {
   readonly workflowKey: string;
   readonly workflowVersion: number;
   readonly currentStateKey: string;
+
+  /**
+   * Display names resolved by the server.
+   *
+   * Present when the data came from the API, absent for fixture data, which
+   * resolves names from the local catalogue instead. Optional rather than
+   * required so neither source has to fake what it does not have.
+   */
+  readonly serviceName?: LocalizedText;
+  readonly currentStateName?: LocalizedText;
   readonly status: RequestStatus;
   readonly priority: RequestPriority;
   readonly createdAt: string;

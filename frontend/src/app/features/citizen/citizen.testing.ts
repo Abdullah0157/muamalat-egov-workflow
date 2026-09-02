@@ -17,6 +17,7 @@ import {
   ServiceRequest,
   User,
   WorkflowDefinition,
+  WorkflowTransition,
   WorkflowVersion,
 } from '../../core/models/domain';
 
@@ -55,6 +56,11 @@ export class StubGateway extends DataGateway {
 
   async submitRequest(_draft: RequestDraft, _applicant: User): Promise<ServiceRequest> {
     throw notImplemented('submitRequest');
+  }
+
+  /** The stub offers no actions; screens under test drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
   }
 
   async applyTransition(_input: TransitionInput): Promise<ServiceRequest> {
@@ -163,4 +169,5 @@ export function makeRequest(overrides: Partial<ServiceRequest> = {}): ServiceReq
     comments: [],
     ...overrides,
   };
+
 }

@@ -40,6 +40,12 @@ public static class RequestEndpoints
         group.MapGet("/{id:guid}", GetAsync)
             .WithSummary("Get a request");
 
+        // Citizens and officers cite the reference number, not the internal id: it is what
+        // appears on a receipt and what someone reads out over the phone. Deep links in the
+        // interface therefore use it, so it has to be a first class way to find a request.
+        group.MapGet("/by-reference/{reference}", GetByReferenceAsync)
+            .WithSummary("Get a request by its citizen facing reference number");
+
         group.MapGet("/{id:guid}/transitions", TransitionsAsync)
             .WithSummary("Transitions available to the caller on this request");
 
@@ -132,26 +138,24 @@ public static class RequestEndpoints
     private static async Task<Ok<IReadOnlyList<RequestSummaryDto>>> MineAsync(
         MuamalatDbContext db,
         ICurrentUser currentUser,
+        TimeProvider clock,
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
         var userId = currentUser.UserId;
 
-        var requests = await db.ServiceRequests
+        var query = db.ServiceRequests
             .AsNoTracking()
             .Where(r => r.ApplicantUserId == userId)
-            .OrderByDescending(r => r.SubmittedAt)
-            .Skip((Math.Max(page, 1) - 1) * Paging.Clamp(pageSize))
-            .Take(Paging.Clamp(pageSize))
-            .Select(r => new RequestSummaryDto(
-                r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
-                r.ApplicantUserId, r.ApplicantDisplayName,
-                r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt,
-                r.ClosedAt, r.AssignedToDepartment, null))
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(r => r.SubmittedAt);
 
-        return TypedResults.Ok<IReadOnlyList<RequestSummaryDto>>(requests);
+        // The applicant is shown the same SLA position an officer sees. Hiding
+        // it would leave a citizen unable to tell whether their application is
+        // running late, which is the single thing they most want to know.
+        var rows = await Paginate(query, page, pageSize).ToListAsync(cancellationToken);
+
+        return TypedResults.Ok(await EnrichWithSlaAsync(db, rows, clock.GetUtcNow(), cancellationToken));
     }
 
     // -----------------------------------------------------------------------
@@ -177,51 +181,10 @@ public static class RequestEndpoints
         if (!string.IsNullOrWhiteSpace(department))
             query = query.Where(r => r.AssignedToDepartment == department);
 
-        var rows = await query
-            .OrderBy(r => r.CurrentStateEnteredAt)
-            .Skip((Math.Max(page, 1) - 1) * size)
-            .Take(size)
-            .Select(r => new
-            {
-                r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey, r.WorkflowVersion,
-                r.ApplicantUserId, r.ApplicantDisplayName,
-                r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt,
-                r.AssignedToDepartment, r.WorkflowDefinitionId
-            })
+        var rows = await Paginate(query.OrderBy(r => r.CurrentStateEnteredAt), page, pageSize)
             .ToListAsync(cancellationToken);
 
-        // SLA policies for exactly the states on this page, fetched in one query rather than
-        // per row. Without this the queue would issue an extra query per request (N+1).
-        var stateKeys = rows.Select(r => new { r.WorkflowDefinitionId, r.CurrentStateCode }).Distinct().ToList();
-        var definitionIds = stateKeys.Select(k => k.WorkflowDefinitionId).Distinct().ToList();
-        var stateCodes = stateKeys.Select(k => k.CurrentStateCode).Distinct().ToList();
-
-        var states = await db.WorkflowStates
-            .AsNoTracking()
-            .Where(s => definitionIds.Contains(s.WorkflowDefinitionId) && stateCodes.Contains(s.Code))
-            .ToListAsync(cancellationToken);
-
-        var now = clock.GetUtcNow();
-
-        var result = rows.Select(r =>
-        {
-            var state = states.FirstOrDefault(s =>
-                s.WorkflowDefinitionId == r.WorkflowDefinitionId && s.Code == r.CurrentStateCode);
-
-            var sla = state?.Sla is null
-                ? null
-                : new SlaStatusDto(
-                    state.Sla.Evaluate(r.CurrentStateEnteredAt, now).ToString(),
-                    state.Sla.DueAt(r.CurrentStateEnteredAt));
-
-            return new RequestSummaryDto(
-                r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
-                r.ApplicantUserId, r.ApplicantDisplayName,
-                r.CurrentStateCode, r.SubmittedAt, r.CurrentStateEnteredAt,
-                r.ClosedAt, r.AssignedToDepartment, sla);
-        }).ToList();
-
-        return TypedResults.Ok<IReadOnlyList<RequestSummaryDto>>(result);
+        return TypedResults.Ok(await EnrichWithSlaAsync(db, rows, clock.GetUtcNow(), cancellationToken));
     }
 
     // -----------------------------------------------------------------------
@@ -245,6 +208,26 @@ public static class RequestEndpoints
         if (definition is null) return TypedResults.NotFound(Problems.DefinitionMissing(request.ReferenceNumber));
 
         return TypedResults.Ok(RequestDetailDto.From(request, definition, clock.GetUtcNow()));
+    }
+
+    private static async Task<Results<Ok<RequestDetailDto>, NotFound<ProblemDetails>, ForbidHttpResult>>
+        GetByReferenceAsync(
+            string reference,
+            MuamalatDbContext db,
+            ICurrentUser currentUser,
+            TimeProvider clock,
+            CancellationToken cancellationToken)
+    {
+        var id = await db.ServiceRequests
+            .AsNoTracking()
+            .Where(r => r.ReferenceNumber == reference)
+            .Select(r => (Guid?)r.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (id is null)
+            return TypedResults.NotFound(Problems.ReferenceNotFound(reference));
+
+        return await GetAsync(id.Value, db, currentUser, clock, cancellationToken);
     }
 
     private static async Task<Results<Ok<IReadOnlyList<AvailableTransitionDto>>, NotFound<ProblemDetails>, ForbidHttpResult>>
@@ -366,6 +349,100 @@ public static class RequestEndpoints
             [.. entries.Select(AuditEntryDto.From)]));
     }
 
+
+    // -----------------------------------------------------------------------
+    // Shared projection
+    // -----------------------------------------------------------------------
+
+    private static IQueryable<RequestRow> Paginate(IQueryable<ServiceRequest> query, int page, int pageSize)
+    {
+        var size = Paging.Clamp(pageSize);
+
+        return query
+            .Skip((Math.Max(page, 1) - 1) * size)
+            .Take(size)
+            .Select(r => new RequestRow(
+                r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
+                r.ApplicantUserId, r.ApplicantDisplayName, r.CurrentStateCode,
+                r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt,
+                r.AssignedToDepartment, r.WorkflowDefinitionId));
+    }
+
+    /// <summary>
+    /// Attaches SLA position to a page of rows.
+    ///
+    /// The states are fetched in one query for the whole page rather than one
+    /// per row. Doing it per row is the classic N+1: a fifty row queue would
+    /// issue fifty extra round trips, and the cost only shows up once the
+    /// system has real volume.
+    /// </summary>
+    private static async Task<IReadOnlyList<RequestSummaryDto>> EnrichWithSlaAsync(
+        MuamalatDbContext db,
+        IReadOnlyList<RequestRow> rows,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (rows.Count == 0) return [];
+
+        var definitionIds = rows.Select(r => r.WorkflowDefinitionId).Distinct().ToList();
+        var stateCodes = rows.Select(r => r.CurrentStateCode).Distinct().ToList();
+
+        var states = await db.WorkflowStates
+            .AsNoTracking()
+            .Where(s => definitionIds.Contains(s.WorkflowDefinitionId) && stateCodes.Contains(s.Code))
+            .ToListAsync(cancellationToken);
+
+        // Display names for the service and the stage, resolved once for the page. Without
+        // these a list row can only show machine codes such as TECHNICAL_REVIEW, which is
+        // meaningless to a citizen and untranslatable into Arabic.
+        var definitions = await db.WorkflowDefinitions
+            .AsNoTracking()
+            .Where(d => definitionIds.Contains(d.Id))
+            .Select(d => new { d.Id, d.NameEn, d.NameAr })
+            .ToListAsync(cancellationToken);
+
+        return [.. rows.Select(r =>
+        {
+            var state = states.FirstOrDefault(s =>
+                s.WorkflowDefinitionId == r.WorkflowDefinitionId && s.Code == r.CurrentStateCode);
+
+            // A closed request has no live deadline, and a state with no SLA is
+            // one where the citizen is the one who has to act.
+            var sla = state?.Sla is null || r.ClosedAt is not null
+                ? null
+                : new SlaStatusDto(
+                    state.Sla.Evaluate(r.CurrentStateEnteredAt, now).ToString(),
+                    state.Sla.DueAt(r.CurrentStateEnteredAt));
+
+            var definition = definitions.FirstOrDefault(d => d.Id == r.WorkflowDefinitionId);
+
+            return new RequestSummaryDto(
+                r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey,
+                definition?.NameEn ?? r.ServiceType,
+                definition?.NameAr ?? r.ServiceType,
+                state?.NameEn ?? r.CurrentStateCode,
+                state?.NameAr ?? r.CurrentStateCode,
+                r.ApplicantUserId, r.ApplicantDisplayName, r.CurrentStateCode,
+                r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt,
+                r.AssignedToDepartment, sla);
+        })];
+    }
+
+    /// <summary>Flat projection shared by the citizen list and the officer queue.</summary>
+    private sealed record RequestRow(
+        Guid Id,
+        string ReferenceNumber,
+        string ServiceType,
+        string WorkflowKey,
+        string ApplicantUserId,
+        string ApplicantDisplayName,
+        string CurrentStateCode,
+        DateTimeOffset SubmittedAt,
+        DateTimeOffset CurrentStateEnteredAt,
+        DateTimeOffset? ClosedAt,
+        string? AssignedToDepartment,
+        Guid WorkflowDefinitionId);
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
@@ -416,6 +493,10 @@ public sealed record RequestSummaryDto(
     string ReferenceNumber,
     string ServiceType,
     string WorkflowKey,
+    string ServiceNameEn,
+    string ServiceNameAr,
+    string CurrentStateNameEn,
+    string CurrentStateNameAr,
     string ApplicantUserId,
     string ApplicantDisplayName,
     string CurrentStateCode,
@@ -433,6 +514,8 @@ public sealed record RequestDetailDto(
     string ServiceType,
     string WorkflowKey,
     int WorkflowVersion,
+    string ServiceNameEn,
+    string ServiceNameAr,
     string ApplicantUserId,
     string ApplicantDisplayName,
     string CurrentStateCode,
@@ -460,6 +543,7 @@ public sealed record RequestDetailDto(
 
         return new RequestDetailDto(
             r.Id, r.ReferenceNumber, r.ServiceType, r.WorkflowKey, r.WorkflowVersion,
+            d.NameEn, d.NameAr,
             r.ApplicantUserId, r.ApplicantDisplayName,
             r.CurrentStateCode, state?.NameEn ?? r.CurrentStateCode, state?.NameAr ?? r.CurrentStateCode,
             r.IsClosed, r.SubmittedAt, r.CurrentStateEnteredAt, r.ClosedAt, r.DecisionAt,

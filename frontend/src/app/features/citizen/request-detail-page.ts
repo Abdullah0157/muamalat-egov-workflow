@@ -49,6 +49,7 @@ import {
   buildStageSteps,
   departmentFor,
   serviceFor,
+  serviceNameOf,
   stateName,
 } from '../shared/request-presentation';
 import { acceptAttributeFor, formatAcceptedFormats } from './wizard-model';
@@ -451,8 +452,11 @@ export class RequestDetailPage {
   }
 
   protected serviceName(record: ServiceRequest): string {
-    const service = serviceFor(record);
-    return service ? this.i18n.pick(service.name) : this.i18n.t('common.notAvailable');
+    // Prefer the name the server resolved against the definition this request is
+    // pinned to. The local catalogue only knows the versions it shipped with, so
+    // it cannot name a service whose workflow was edited after this build.
+    const name = serviceNameOf(record, this.i18n);
+    return name || this.i18n.t('common.notAvailable');
   }
 
   protected departmentName(record: ServiceRequest): string {

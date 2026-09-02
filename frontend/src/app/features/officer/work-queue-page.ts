@@ -30,7 +30,7 @@ import { Select, SelectOption } from '../../shared/ui/select/select';
 import { SkeletonTable } from '../../shared/ui/skeleton/skeleton-table';
 import { priorityPresentation, slaPresentation } from '../../shared/ui/status/status-presentation';
 import { TextField } from '../../shared/ui/text-field/text-field';
-import { serviceFor, stateName } from '../shared/request-presentation';
+import { serviceNameOf, stateName } from '../shared/request-presentation';
 
 /**
  * Long enough that a typed reference number is one request rather than twelve,
@@ -454,7 +454,7 @@ export class WorkQueuePage {
   protected readonly rowLink = (row: QueueRow): unknown[] => ['/officer', row.request.reference];
 
   protected serviceName(request: ServiceRequest): string {
-    return this.i18n.pick(serviceFor(request)?.name);
+    return serviceNameOf(request, this.i18n);
   }
 
   protected currentState(request: ServiceRequest): string {

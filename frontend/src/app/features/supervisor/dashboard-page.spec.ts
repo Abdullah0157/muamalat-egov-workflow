@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { DataGateway, ServiceUnavailableError } from '../../core/data/data-gateway';
 import { DashboardMetrics, DashboardPeriod, EscalationRow } from '../../core/data/metrics';
-import { ServiceRequest } from '../../core/models/domain';
+import { ServiceRequest, WorkflowTransition } from '../../core/models/domain';
 import { all, el, maybeEl, text } from '../../shared/testing/dom';
 import { setupI18n, testProviders } from '../../shared/testing/i18n';
 import { DashboardPage } from './dashboard-page';
@@ -135,6 +135,11 @@ function unused(): never {
  * dozen domain types into a spec that never uses them.
  */
 class FakeGateway extends DataGateway {
+  /** The engine's answer is not under test here; screens drive state directly. */
+  async listAvailableTransitions(): Promise<readonly WorkflowTransition[]> {
+    return [];
+  }
+
   metrics: DashboardMetrics = METRICS;
   failNext = false;
   readonly calls: DashboardPeriod[] = [];

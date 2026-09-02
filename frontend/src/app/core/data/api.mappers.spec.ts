@@ -12,6 +12,8 @@ const REQUEST: ApiRequestDetail = {
   serviceType: 'Commercial Licence Renewal',
   workflowKey: 'commercial-licence-renewal',
   workflowVersion: 1,
+  serviceNameEn: 'Commercial Licence Renewal',
+  serviceNameAr: 'تجديد الرخصة التجارية',
   applicantUserId: 'citizen-1',
   applicantDisplayName: 'Fatima Al Suwaidi',
   currentStateCode: 'DOCUMENT_REVIEW',
@@ -40,6 +42,14 @@ const REQUEST: ApiRequestDetail = {
 };
 
 describe('request mapping', () => {
+  it('uses the service and stage names the server resolved', () => {
+    // The names come from the definition the request is pinned to, which the
+    // browser cannot look up for a version it has never seen.
+    const mapped = toServiceRequest(REQUEST, []);
+    expect(mapped.serviceName?.ar).toBe('تجديد الرخصة التجارية');
+    expect(mapped.currentStateName?.ar).toBe('مراجعة المستندات');
+  });
+
   it('carries the citizen facing reference through unchanged', () => {
     expect(toServiceRequest(REQUEST, []).reference).toBe('MW-2026-000123');
   });

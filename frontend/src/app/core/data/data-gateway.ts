@@ -8,6 +8,7 @@ import {
   SlaStatus,
   User,
   WorkflowDefinition,
+  WorkflowTransition,
   WorkflowVersion,
 } from '../models/domain';
 import { DashboardMetrics, DashboardPeriod } from './metrics';
@@ -79,6 +80,17 @@ export abstract class DataGateway {
 
   abstract submitRequest(draft: RequestDraft, applicant: User): Promise<ServiceRequest>;
   abstract applyTransition(input: TransitionInput): Promise<ServiceRequest>;
+
+  /**
+   * The transitions the workflow engine will actually accept from this caller on
+   * this request, right now.
+   *
+   * Asked of the engine rather than derived in the browser. The engine is the only
+   * place the rules are enforced, so deriving a second copy in the UI guarantees the
+   * two drift: a client that has not been reloaded offers actions the server refuses,
+   * and a client missing a definition offers none at all.
+   */
+  abstract listAvailableTransitions(requestId: string): Promise<readonly WorkflowTransition[]>;
   abstract addComment(input: CommentInput): Promise<ServiceRequest>;
   abstract setDocumentVerification(input: DocumentVerificationInput): Promise<ServiceRequest>;
   abstract assignRequest(requestId: string, assigneeId: string | null): Promise<ServiceRequest>;
